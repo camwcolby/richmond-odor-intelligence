@@ -1,0 +1,10 @@
+services:
+  odor-intelligence:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - APP_ENV=development
+      - DATABASE_PATH=data/odor_demo.db

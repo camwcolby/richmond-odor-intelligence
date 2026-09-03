@@ -1,0 +1,14 @@
+{
+  "name": "richmond-odor-intelligence",
+  "version": "0.1.0",
+  "status": "prototype",
+  "live_integrations": [
+    "Open-Meteo weather",
+    "NOAA CO-OPS tides"
+  ],
+  "simulated_integrations": [
+    "Richmond H2S",
+    "CMMS"
+  ],
+  "privacy": "public complaints snapped to approved landmarks; raw coordinates suppressed"
+}
