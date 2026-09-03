@@ -3,18 +3,29 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Richmond Odor Intelligence</title>
+  <title>Richmond Odor Intelligence | WaterMinds</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="/static/styles.css"/>
 </head>
 <body>
-<header>
-  <div>
-    <div class="eyebrow">WATERMINDS • PROTOTYPE</div>
-    <h1>Richmond Odor Intelligence</h1>
-    <p>Forecast odor risk, see live conditions, and close the loop on community reports.</p>
+<header class="brand-header">
+  <div class="brand-lockup">
+    <div class="waterminds-mark">
+      <img src="/static/assets/waterminds-logo.png" alt="WaterMinds, an Inframark Solution"/>
+    </div>
+    <div class="title-block">
+      <div class="eyebrow">ODOR INTELLIGENCE • PROTOTYPE</div>
+      <h1>Richmond Odor Intelligence</h1>
+      <p>Predictive odor awareness for treatment, collection system, and community response.</p>
+    </div>
   </div>
-  <div class="demo-pill">DEMO / SIMULATED H₂S + CMMS</div>
+
+  <div class="partner-lockup">
+    <div class="partner-label">Prepared for</div>
+    <div class="partner-card">
+      <img src="/static/assets/richmond-logo.png" alt="City of Richmond"/>
+    </div>
+  </div>
 </header>
 
 <nav>
@@ -26,47 +37,104 @@
 
 <main>
 <section id="forecast" class="view active">
+  <div class="section-intro">
+    <div>
+      <div class="section-kicker">CURRENT OUTLOOK</div>
+      <h2>Odor conditions at a glance</h2>
+    </div>
+    <div class="status-chip">DEMO • SIMULATED H₂S + CMMS</div>
+  </div>
+
   <div class="hero-grid">
     <article class="risk-card">
       <div class="small">CURRENT ODOR RISK</div>
       <div id="riskLevel" class="risk-level">Loading…</div>
       <div id="riskPct" class="risk-pct">--%</div>
       <p id="riskNarrative">Combining H₂S, wind, weather, rainfall and tide conditions.</p>
+      <div class="divider"></div>
+      <div class="small muted">PRIMARY DRIVERS</div>
       <div id="drivers" class="drivers"></div>
     </article>
+
     <article class="map-card">
-      <div class="card-title">Spatial Situation</div>
+      <div class="card-title-row">
+        <div>
+          <div class="small muted">SPATIAL VIEW</div>
+          <div class="card-title">Odor Risk & Source Context</div>
+        </div>
+        <div class="map-legend">
+          <span><i class="dot sensor-dot"></i> H₂S sensor</span>
+          <span><i class="dot hotspot-dot"></i> Sewer hotspot</span>
+        </div>
+      </div>
       <div id="map"></div>
     </article>
   </div>
+
   <article class="panel">
-    <div class="card-title">Next 6 Hours</div>
+    <div class="card-title-row">
+      <div>
+        <div class="small muted">FORECAST</div>
+        <div class="card-title">Next 6 Hours</div>
+      </div>
+    </div>
     <div id="forecastStrip" class="forecast-strip"></div>
   </article>
 </section>
 
 <section id="conditions" class="view">
-  <div class="kpi-grid">
-    <div class="kpi"><span>Wind</span><strong id="wind">--</strong></div>
-    <div class="kpi"><span>Temperature</span><strong id="temp">--</strong></div>
-    <div class="kpi"><span>Rainfall</span><strong id="rain">--</strong></div>
-    <div class="kpi"><span>Tide</span><strong id="tide">--</strong></div>
+  <div class="section-intro">
+    <div>
+      <div class="section-kicker">LIVE CONDITIONS</div>
+      <h2>Environmental and sensor context</h2>
+    </div>
   </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><span>Wind</span><strong id="wind">--</strong><small>speed & direction</small></div>
+    <div class="kpi"><span>Temperature</span><strong id="temp">--</strong><small>current condition</small></div>
+    <div class="kpi"><span>Rainfall</span><strong id="rain">--</strong><small>current interval</small></div>
+    <div class="kpi"><span>Tide</span><strong id="tide">--</strong><small>Richmond NOAA station</small></div>
+  </div>
+
   <article class="panel">
-    <div class="card-title">H₂S Sensors</div>
+    <div class="card-title-row">
+      <div>
+        <div class="small muted">SENSORS</div>
+        <div class="card-title">H₂S Monitor Network</div>
+      </div>
+    </div>
     <div id="sensorCards" class="sensor-grid"></div>
   </article>
 </section>
 
 <section id="complaints" class="view">
+  <div class="section-intro">
+    <div>
+      <div class="section-kicker">COMMUNITY RESPONSE</div>
+      <h2>Complaint activity and follow-up</h2>
+    </div>
+  </div>
+
   <div class="split">
-    <article class="panel">
-      <div class="card-title">Complaint Density & Approximate Locations</div>
-      <p class="privacy-note">Public map points are snapped to approved landmarks. Raw coordinates are never returned by the public API.</p>
+    <article class="panel map-panel">
+      <div class="card-title-row">
+        <div>
+          <div class="small muted">PUBLIC VIEW</div>
+          <div class="card-title">Complaint Density</div>
+        </div>
+      </div>
+      <p class="privacy-note">Locations are anonymized to approved public landmarks. Exact complaint coordinates are not displayed.</p>
       <div id="complaintMap"></div>
     </article>
-    <article class="panel">
-      <div class="card-title">Response Tracker</div>
+
+    <article class="panel tracker-panel">
+      <div class="card-title-row">
+        <div>
+          <div class="small muted">RESPONSE STATUS</div>
+          <div class="card-title">Complaint Tracker</div>
+        </div>
+      </div>
       <div class="table-wrap">
       <table>
         <thead><tr><th>Reported</th><th>Approx. Location</th><th>Intensity</th><th>Status</th><th>Work Order</th></tr></thead>
@@ -78,10 +146,23 @@
 </section>
 
 <section id="report" class="view">
+  <div class="section-intro">
+    <div>
+      <div class="section-kicker">COMMUNITY INPUT</div>
+      <h2>Report an odor</h2>
+    </div>
+  </div>
+
   <article class="report-card">
-    <div class="small">COMMUNITY REPORT</div>
-    <h2>Tell us what you smell.</h2>
-    <p>This prototype mimics a Survey123 intake. The CMMS work order is simulated.</p>
+    <div class="report-heading">
+      <div>
+        <div class="small">ODOR REPORT</div>
+        <h3>Tell us what you smell.</h3>
+        <p>This prototype mimics a Survey123 intake. The CMMS work order is simulated.</p>
+      </div>
+      <div class="privacy-badge">Location protected</div>
+    </div>
+
     <form id="complaintForm">
       <div class="form-grid">
         <label>Latitude<input name="latitude" type="number" step="0.0001" value="37.9255" required></label>
@@ -97,7 +178,10 @@
 </section>
 </main>
 
-<footer>Prototype architecture for development handoff • Environmental APIs are live where available • H₂S and CMMS are clearly simulated until sanctioned integrations are connected.</footer>
+<footer>
+  <div class="footer-brand">WaterMinds • An Inframark Solution</div>
+  <div>Prototype for development handoff. Environmental APIs are live where available; H₂S and CMMS remain simulated until sanctioned integrations are connected.</div>
+</footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/static/app.js"></script>

@@ -10,7 +10,7 @@ for (const m of [mainMap, complaintMap]) {
 const q = s => document.querySelector(s);
 const qa = s => [...document.querySelectorAll(s)];
 
-function riskColor(level){return level==='High'?'#d95c4f':level==='Moderate'?'#e3a62f':'#2d9b6f'}
+function riskColor(level){return level==='High'?'#C84E4E':level==='Moderate'?'#E6A83A':'#5EB95E'}
 
 qa('nav button').forEach(b=>b.onclick=()=>{
   qa('nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
@@ -33,12 +33,12 @@ async function loadRisk(){
 async function loadH2S(){
   const d=await getJson('/api/h2s');
   q('#sensorCards').innerHTML=d.sensors.map(s=>`<div class="sensor"><span>${s.name}</span><b>${s.h2s_ppb} ppb</b><small>${s.simulated?'Simulated':'Live'}</small></div>`).join('');
-  d.sensors.forEach(s=>L.circleMarker([s.lat,s.lon],{radius:9,weight:2,fillOpacity:.8}).bindPopup(`<b>${s.name}</b><br>${s.h2s_ppb} ppb H₂S<br><small>Simulated feed</small>`).addTo(mainMap));
+  d.sensors.forEach(s=>L.circleMarker([s.lat,s.lon],{radius:9,weight:2,fillOpacity:.82,color:'#008FD5',fillColor:'#008FD5'}).bindPopup(`<b>${s.name}</b><br>${s.h2s_ppb} ppb H₂S<br><small>Simulated feed</small>`).addTo(mainMap));
 }
 
 async function loadHotspots(){
   const hs=await getJson('/api/hotspots');
-  hs.forEach(h=>L.circleMarker([h.latitude,h.longitude],{radius:6,weight:1,fillOpacity:.45}).bindPopup(`<b>${h.name}</b><br>${h.category}<br>Source score ${h.source_score}`).addTo(mainMap));
+  hs.forEach(h=>L.circleMarker([h.latitude,h.longitude],{radius:6,weight:1,fillOpacity:.55,color:'#5EB95E',fillColor:'#5EB95E'}).bindPopup(`<b>${h.name}</b><br>${h.category}<br>Source score ${h.source_score}`).addTo(mainMap));
 }
 
 async function loadConditions(){
