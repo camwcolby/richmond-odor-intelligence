@@ -524,3 +524,736 @@ footer{
   .kpi-grid,.sensor-grid{grid-template-columns:1fr}
   .waterminds-mark img{width:70vw}
 }
+
+
+/* v0.7 Model Performance */
+.ml-health-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.ml-health-card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--blue);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.ml-health-card span,.ml-metrics-grid span,.cm-cell span{display:block;color:var(--muted);font-size:12px;font-weight:700}
+.ml-health-card strong{display:block;color:var(--navy);font-size:30px;margin:7px 0}.ml-health-card .small-strong{font-size:18px}
+.ml-two-col{display:grid;grid-template-columns:1.1fr .9fr;gap:20px}.ml-panel{margin-top:20px}
+.ml-metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:18px}
+.ml-metrics-grid>div{background:#F7FAFC;border:1px solid #E4EBF2;border-radius:12px;padding:16px}
+.ml-metrics-grid strong{display:block;font-size:25px;color:var(--navy);margin:5px 0}.ml-note{color:var(--muted);font-size:12px;padding:0 18px 16px}
+.confusion-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:18px}.cm-cell{border-radius:12px;padding:18px;border:1px solid var(--line)}
+.cm-cell strong{display:block;font-size:31px;margin-top:6px}.cm-good{background:#F2F9F1}.cm-good strong{color:var(--green)}.cm-warn{background:#FFF8EA}.cm-warn strong{color:#C97917}
+.ml-feature-list{padding:18px}.ml-feature-row{display:grid;grid-template-columns:minmax(190px,1.2fr) 2fr 65px;gap:14px;align-items:center;margin:10px 0;font-size:13px}
+.ml-feature-bar{height:8px;background:#EDF1F5;border-radius:999px;overflow:hidden}.ml-feature-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--green))}
+.ml-cycle{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:16px;align-items:center;padding:22px}.ml-cycle div:not(.ml-arrow){background:#F7FAFC;border:1px solid #E4EBF2;border-radius:12px;padding:17px}.ml-cycle b{display:block;color:var(--navy)}.ml-cycle span{font-size:12px;color:var(--muted)}.ml-arrow{font-size:24px;color:var(--muted-blue)}
+.ml-empty{background:#fff;border:1px solid var(--line);border-radius:18px;padding:30px;box-shadow:var(--shadow)}
+@media(max-width:900px){.ml-health-grid{grid-template-columns:1fr 1fr}.ml-two-col{grid-template-columns:1fr}.ml-cycle{grid-template-columns:1fr}}
+
+
+/* v0.8 rare-event validation */
+.ml-reliability{
+  border-radius:14px;
+  padding:14px 18px;
+  margin-bottom:18px;
+  font-size:13px;
+}
+.ml-reliability b{display:block;margin-bottom:4px}
+.ml-reliability span{color:var(--muted)}
+.ml-reliability.good{
+  background:#F2F9F1;
+  border:1px solid #CFE8CC;
+  color:#2F7A35;
+}
+.ml-reliability.caution{
+  background:#FFF8EA;
+  border:1px solid #F1D59A;
+  color:#9A6212;
+}
+.ml-status-list{padding:18px}
+.ml-status-list>div{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  padding:11px 0;
+  border-bottom:1px solid var(--line);
+  font-size:13px;
+}
+.ml-status-list>div:last-child{border-bottom:0}
+.ml-status-list span{color:var(--muted)}
+.ml-status-list b{color:var(--navy);text-align:right}
+
+
+/* v0.9 continuous H2S forecasting */
+.ml-candidate-list{
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.ml-candidate{
+  display:grid;
+  grid-template-columns:1.8fr repeat(3,1fr);
+  gap:14px;
+  align-items:center;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#F8FAFC;
+}
+.ml-candidate.selected{
+  background:#F2F9F1;
+  border-color:#BFDDBD;
+}
+.ml-candidate>div span{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  margin-bottom:3px;
+}
+.ml-candidate>div b{
+  color:var(--navy);
+  font-size:13px;
+}
+.ml-candidate>div:first-child b{
+  font-size:14px;
+}
+.ml-note-pad{
+  padding:20px;
+}
+@media(max-width:760px){
+  .ml-candidate{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+
+/* v1.0 two-layer forecast */
+.ml-x-driver{
+  display:grid;
+  grid-template-columns:1fr auto 1fr auto 1fr;
+  gap:18px;
+  align-items:center;
+  padding:24px;
+}
+.ml-x-driver>div:not(.ml-minus):not(.ml-equals){
+  background:#F7FAFC;
+  border:1px solid #E4EBF2;
+  border-radius:14px;
+  padding:18px;
+}
+.ml-x-driver span{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+}
+.ml-x-driver strong{
+  display:block;
+  color:var(--navy);
+  font-size:27px;
+  margin-top:7px;
+}
+.ml-x-result{
+  background:#F2F9F1!important;
+  border-color:#CFE8CC!important;
+}
+.ml-x-result strong{color:var(--green)}
+.ml-minus,.ml-equals{
+  color:var(--muted-blue);
+  font-size:25px;
+  font-weight:800;
+}
+@media(max-width:800px){
+  .ml-x-driver{grid-template-columns:1fr}
+  .ml-minus,.ml-equals{text-align:center}
+}
+
+
+/* v1.0.4 production prototype polish */
+.ml-meta-strip{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin:0 0 20px;
+}
+.ml-meta-strip>div{
+  background:#F7FAFC;
+  border:1px solid #E4EBF2;
+  border-radius:12px;
+  padding:12px 14px;
+}
+.ml-meta-strip span{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:700;
+  margin-bottom:4px;
+}
+.ml-meta-strip b{
+  color:var(--navy);
+  font-size:12px;
+}
+.threshold-curve{
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.threshold-row{
+  display:grid;
+  grid-template-columns:58px 1fr 80px;
+  gap:12px;
+  align-items:center;
+  padding:9px 11px;
+  border:1px solid #E4EBF2;
+  border-radius:10px;
+  background:#FAFCFE;
+}
+.threshold-row.selected{
+  background:#F2F9F1;
+  border-color:#BFDDBD;
+}
+.threshold-label{
+  font-weight:800;
+  color:var(--navy);
+  font-size:12px;
+}
+.threshold-bars{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.threshold-metric{
+  display:grid;
+  grid-template-columns:70px 1fr 48px;
+  gap:8px;
+  align-items:center;
+}
+.threshold-metric span{
+  color:var(--muted);
+  font-size:10px;
+}
+.threshold-metric b{
+  color:var(--navy);
+  font-size:11px;
+  text-align:right;
+}
+.threshold-track{
+  height:7px;
+  background:#EDF1F5;
+  border-radius:999px;
+  overflow:hidden;
+}
+.threshold-track i{
+  display:block;
+  height:100%;
+  background:var(--green);
+}
+.threshold-metric.nuisance .threshold-track i{
+  background:#E6A83A;
+}
+.selected-chip{
+  justify-self:end;
+  background:#E6F4E4;
+  color:#2F7A35;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:10px;
+  font-weight:800;
+}
+@media(max-width:900px){
+  .ml-meta-strip{grid-template-columns:1fr 1fr}
+}
+@media(max-width:700px){
+  .threshold-row{grid-template-columns:1fr}
+  .threshold-bars{grid-template-columns:1fr}
+  .selected-chip{justify-self:start}
+}
+
+
+/* v1.0.5 tighter layout + address/landmark reporting */
+
+/* ---------- Overall density ---------- */
+main{
+  width:min(96vw,1560px)!important;
+  max-width:1560px!important;
+  margin:0 auto!important;
+  padding:20px 28px 36px!important;
+}
+
+.view{
+  width:100%!important;
+  max-width:none!important;
+}
+
+.section-intro{
+  width:100%!important;
+  max-width:1480px!important;
+  margin:10px auto 16px!important;
+  padding:0 4px!important;
+}
+
+.section-intro .section-kicker{
+  font-size:12px!important;
+  letter-spacing:.12em!important;
+  margin-bottom:5px!important;
+}
+
+.section-intro h2{
+  font-size:clamp(30px,2.25vw,42px)!important;
+  line-height:1.04!important;
+  letter-spacing:-.025em!important;
+  margin:0!important;
+}
+
+.panel,
+.card{
+  border-radius:14px!important;
+}
+
+#report .panel,
+#report form{
+  max-width:1020px!important;
+}
+
+#report .panel{
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+#report form{
+  width:100%!important;
+}
+
+/* Pull cards closer together without making them cramped. */
+.kpi-grid,
+.ml-health-grid,
+.ml-two-col{
+  gap:14px!important;
+}
+
+.ml-panel{
+  margin-top:14px!important;
+}
+
+/* ---------- Header: shorter, still branded ---------- */
+header,
+.site-header,
+.hero-header{
+  min-height:0!important;
+}
+
+header .header-inner,
+.site-header .header-inner,
+.hero-header .header-inner{
+  padding-top:10px!important;
+  padding-bottom:10px!important;
+}
+
+header img,
+.site-header img,
+.hero-header img{
+  max-height:78px!important;
+}
+
+header h1,
+.site-header h1,
+.hero-header h1{
+  font-size:clamp(30px,2.2vw,42px)!important;
+  line-height:1!important;
+  margin:3px 0 5px!important;
+}
+
+header p,
+.site-header p,
+.hero-header p{
+  margin:0!important;
+}
+
+/* Make the nav slightly more compact vertically. */
+nav,
+.top-nav{
+  min-height:42px!important;
+}
+
+nav button,
+.top-nav button,
+nav a,
+.top-nav a{
+  padding-top:11px!important;
+  padding-bottom:11px!important;
+}
+
+/* ---------- Report location control ---------- */
+.coordinate-field-hidden{
+  display:none!important;
+}
+
+.location-entry-panel{
+  grid-column:1/-1;
+  background:#F7FAFC;
+  border:1px solid #D9E4EE;
+  border-radius:13px;
+  padding:16px;
+  margin:4px 0 18px;
+}
+
+.location-entry-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:20px;
+  margin-bottom:13px;
+}
+
+.location-main-label{
+  display:block;
+  color:var(--navy);
+  font-size:14px;
+  font-weight:800;
+  margin-bottom:3px;
+}
+
+.location-entry-heading p{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+  margin:0;
+  max-width:660px;
+}
+
+.privacy-pill{
+  flex:0 0 auto;
+  border:1px solid #A9D7F5;
+  color:var(--blue);
+  background:#FFFFFF;
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:10px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.location-mode-toggle{
+  display:inline-flex;
+  border:1px solid #CCDCE8;
+  border-radius:9px;
+  overflow:hidden;
+  background:white;
+  margin-bottom:13px;
+}
+
+.location-mode-toggle button{
+  appearance:none;
+  border:0;
+  border-right:1px solid #CCDCE8;
+  background:white;
+  color:var(--muted);
+  font-family:inherit;
+  font-size:12px;
+  font-weight:800;
+  padding:8px 13px;
+  cursor:pointer;
+}
+
+.location-mode-toggle button:last-child{
+  border-right:0;
+}
+
+.location-mode-toggle button.active{
+  color:white;
+  background:var(--blue);
+}
+
+.location-entry-field label{
+  display:block;
+  font-size:12px;
+  font-weight:800;
+  color:var(--navy);
+  margin-bottom:6px;
+}
+
+.location-entry-field input{
+  box-sizing:border-box;
+  width:100%;
+  min-height:42px;
+  border:1px solid #BFD1DF;
+  border-radius:7px;
+  padding:9px 11px;
+  background:white;
+  color:var(--navy);
+  font-family:inherit;
+  font-size:13px;
+}
+
+.location-entry-field input:focus{
+  outline:2px solid rgba(29,139,207,.15);
+  border-color:var(--blue);
+}
+
+.location-geocode-status{
+  min-height:17px;
+  margin-top:8px;
+  font-size:11px;
+  line-height:1.4;
+  color:var(--muted);
+}
+
+.location-geocode-status.success{color:#2F7A35}
+.location-geocode-status.error{color:#A54C34}
+.location-geocode-status.working{color:var(--blue)}
+
+/* Make the report form itself use the extra width better. */
+#report form{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px 18px;
+}
+
+#report form > h1,
+#report form > h2,
+#report form > h3,
+#report form > p,
+#report form > .small,
+#report form > .form-actions,
+#report form > button,
+#report form > .location-entry-panel{
+  grid-column:1/-1;
+}
+
+#report form textarea{
+  min-height:92px!important;
+}
+
+/* Keep form card copy larger, but reduce unused vertical space. */
+#report .card-title,
+#report form h2,
+#report form h3{
+  font-size:clamp(24px,1.8vw,34px)!important;
+  line-height:1.08!important;
+}
+
+#report .panel,
+#report form{
+  padding:22px!important;
+}
+
+/* ---------- Responsive ---------- */
+@media(max-width:900px){
+  main{
+    width:100%!important;
+    padding:16px!important;
+  }
+
+  #report form{
+    grid-template-columns:1fr;
+  }
+
+  #report form > *{
+    grid-column:1!important;
+  }
+
+  .location-entry-heading{
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .privacy-pill{
+    white-space:normal;
+  }
+
+  .section-intro h2{
+    font-size:30px!important;
+  }
+}
+
+
+/* v1.0.6 live cache freshness */
+.cache-freshness{
+  display:inline-block;
+  margin-left:10px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0;
+  text-transform:none;
+}
+
+
+/* v1.0.7 responsive centered shell + dense working canvas */
+:root{
+  --app-shell-max:1680px;
+  --app-gutter:clamp(18px,2vw,34px);
+}
+
+/* Full-bleed gradient, centered content shell */
+header,.site-header,.hero-header{width:100%!important;min-height:0!important;}
+
+.header-inner,
+header > .header-inner,
+.site-header > .header-inner,
+.hero-header > .header-inner{
+  width:min(calc(100% - (2 * var(--app-gutter))),var(--app-shell-max))!important;
+  max-width:var(--app-shell-max)!important;
+  margin:0 auto!important;
+  padding:10px 0!important;
+  box-sizing:border-box!important;
+  display:grid!important;
+  grid-template-columns:minmax(190px,235px) minmax(420px,1fr) minmax(125px,160px)!important;
+  align-items:center!important;
+  column-gap:24px!important;
+}
+
+/* Preserve logo proportions */
+header img,.site-header img,.hero-header img{
+  width:auto!important;
+  height:auto!important;
+  object-fit:contain!important;
+  display:block!important;
+}
+header img:first-of-type,.site-header img:first-of-type,.hero-header img:first-of-type{
+  max-width:235px!important;
+  max-height:72px!important;
+}
+header img:last-of-type,.site-header img:last-of-type,.hero-header img:last-of-type{
+  max-width:160px!important;
+  max-height:62px!important;
+  justify-self:end!important;
+}
+
+header h1,.site-header h1,.hero-header h1{
+  font-size:clamp(28px,2vw,40px)!important;
+  line-height:1!important;
+  margin:2px 0 5px!important;
+}
+
+/* Nav aligned to same shell */
+.nav-inner{
+  width:min(calc(100% - (2 * var(--app-gutter))),var(--app-shell-max))!important;
+  max-width:var(--app-shell-max)!important;
+  margin:0 auto!important;
+}
+
+/* Main content aligned with header */
+main{
+  width:min(calc(100% - (2 * var(--app-gutter))),var(--app-shell-max))!important;
+  max-width:var(--app-shell-max)!important;
+  margin:0 auto!important;
+  padding:20px 0 34px!important;
+  box-sizing:border-box!important;
+}
+
+.view,.section-intro,
+#forecast,#conditions,#complaints,#report,
+#ml-performance,#model-performance{
+  width:100%!important;
+  max-width:none!important;
+}
+
+.section-intro{margin:0 0 14px!important;padding:0!important;}
+.section-intro h2{
+  font-size:clamp(30px,2.2vw,42px)!important;
+  line-height:1.02!important;
+  letter-spacing:-.025em!important;
+}
+
+/* Make the working area actually use the viewport */
+#forecast .forecast-grid,
+#forecast .outlook-grid,
+#forecast .hero-grid,
+#forecast .risk-grid,
+#conditions .conditions-grid,
+#conditions .kpi-grid{
+  width:100%!important;
+  max-width:none!important;
+}
+
+/* Wider report card, still readable */
+#report .panel{
+  width:min(100%,1180px)!important;
+  max-width:1180px!important;
+  margin:0 auto!important;
+}
+
+/* Denser cards */
+.panel,.card{border-radius:13px!important;}
+.kpi-grid,.ml-health-grid,.ml-two-col{gap:14px!important;}
+
+@media(max-width:1200px){
+  :root{--app-gutter:20px;}
+  .header-inner{
+    grid-template-columns:minmax(160px,200px) 1fr minmax(105px,130px)!important;
+    column-gap:18px!important;
+  }
+  header img:first-of-type,.site-header img:first-of-type,.hero-header img:first-of-type{max-width:200px!important;}
+  header img:last-of-type,.site-header img:last-of-type,.hero-header img:last-of-type{max-width:130px!important;}
+}
+
+@media(max-width:820px){
+  :root{--app-gutter:14px;}
+  .header-inner{
+    grid-template-columns:1fr auto!important;
+    row-gap:10px!important;
+  }
+  header img:first-of-type,.site-header img:first-of-type,.hero-header img:first-of-type{max-width:175px!important;}
+  header img:last-of-type,.site-header img:last-of-type,.hero-header img:last-of-type{max-width:105px!important;}
+  #report .panel{width:100%!important;}
+}
+
+
+/* v1.0.7 cache badge */
+.cache-freshness{
+  display:inline-block;
+  margin-left:10px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:650;
+  letter-spacing:0;
+  text-transform:none;
+}
+
+
+/* v1.0.9 ML-authoritative forecast routing */
+
+.ml-peak-value{
+  font-size:clamp(34px,3vw,54px)!important;
+  line-height:.95!important;
+  letter-spacing:-.03em!important;
+}
+
+.ml-peak-caption{
+  margin-top:7px;
+  margin-bottom:10px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:700;
+}
+
+.ml-authoritative-driver .driver-top span{
+  font-weight:650;
+}
+
+.ml-authoritative-driver .driver-top b{
+  min-width:54px;
+  text-align:right;
+}
+
+/* Wastewater contribution uses the same ranked visual treatment as every
+   other primary driver. No special pinning or ordering. */
+
+
+/* v1.1.0 freshness + cleaned forecast card */
+.data-asof{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:9.5px;
+  font-weight:600;
+  line-height:1.25;
+}
+#riskNarrative,.risk-narrative{display:none!important;}
+.ml-authoritative-driver .driver-top b{min-width:52px;text-align:right;}
+
+
+/* v1.1.2 persistent ranked primary drivers */
+.driver-v112 .driver-top b{
+  min-width:64px;
+  text-align:right;
+}
+#riskNarrative,
+.risk-narrative{
+  display:none!important;
+}

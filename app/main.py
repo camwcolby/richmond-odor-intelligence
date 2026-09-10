@@ -10,9 +10,14 @@ import csv
 from app.db import init_db, seed_if_empty, list_complaints, insert_complaint, update_status
 from app.services.weather import get_weather
 from app.services.tides import get_tide_predictions
-from app.services.h2s import get_h2s
+from app.services.h2s import get_h2s, get_h2s_history
+from app.services.spatial import get_structures, get_hotspots as get_spatial_hotspots, source_receptor_features, build_risk_surface
 from app.services.privacy import public_landmark, public_map_point
 from app.ml.risk import risk_forecast
+
+from app.ml.store import init_ml_db, load_metrics, load_observations
+from app.ml.pipeline import predict_latest
+from app.ml.automation import start_ml_automation
 
 app = FastAPI(title="Richmond Odor Intelligence", version="0.1.0")
 
@@ -29,6 +34,8 @@ class StatusIn(BaseModel):
 @app.on_event("startup")
 def startup():
     init_db()
+    init_ml_db()
+    start_ml_automation()
     rows = []
     with open("data/mock_complaints.csv", newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
@@ -46,6 +53,10 @@ def health():
 @app.get("/api/h2s")
 async def h2s():
     return await get_h2s()
+
+@app.get("/api/h2s/history")
+async def h2s_history(hours: int = 24):
+    return await get_h2s_history(hours=hours)
 
 @app.get("/api/weather")
 async def weather():
@@ -103,14 +114,7 @@ def change_status(complaint_id: str, body: StatusIn):
 
 @app.get("/api/hotspots")
 def hotspots():
-    out = []
-    with open("data/sewer_hotspots.csv", newline="", encoding="utf-8") as f:
-        for r in csv.DictReader(f):
-            r["latitude"] = float(r["latitude"])
-            r["longitude"] = float(r["longitude"])
-            r["source_score"] = float(r["source_score"])
-            out.append(r)
-    return out
+    return get_spatial_hotspots()
 
 @app.get("/api/risk")
 async def risk():
@@ -135,6 +139,108 @@ async def risk():
     except Exception:
         pass
     return risk_forecast(current, h2s_data["sensors"], tide_value)
+
+
+@app.get("/api/sonoma/config")
+def sonoma_config():
+    import os
+    raw_verify = os.getenv("SONOMA_SSL_VERIFY", "true")
+    token = os.getenv("SONOMA_DMS_TOKEN", "")
+    normalized = raw_verify.strip().lower().strip('"').strip("'")
+    return {
+        "token_configured": bool(token),
+        "token_length": len(token),
+        "ssl_verify_raw": raw_verify,
+        "ssl_verify_disabled": normalized in {"false", "0", "no", "off"},
+    }
+
+@app.get("/api/structures")
+def structures():
+    return get_structures()
+
+@app.get("/api/spatial/context")
+async def spatial_context():
+    h2s_data = await get_h2s()
+    receptors = [
+        {"id": s.get("id"), "name": s.get("name"), "lat": s.get("lat"), "lon": s.get("lon")}
+        for s in h2s_data.get("sensors", [])
+    ]
+
+    wind_direction = None
+    wind = h2s_data.get("wind") or {}
+    if wind.get("direction_deg") is not None:
+        wind_direction = wind.get("direction_deg")
+    else:
+        try:
+            weather_data = await get_weather()
+            wind_direction = weather_data.get("current", {}).get("wind_direction_10m")
+        except Exception:
+            wind_direction = None
+
+    return source_receptor_features(receptors, wind_direction_deg=wind_direction)
+
+@app.get("/api/spatial/risk-surface")
+async def spatial_risk_surface():
+    h2s_data = await get_h2s()
+
+    wind = h2s_data.get("wind") or {}
+    wind_direction = wind.get("direction_deg")
+    wind_speed_mps = wind.get("speed_mps")
+
+    if wind_direction is None:
+        try:
+            weather_data = await get_weather()
+            current = weather_data.get("current", {})
+            wind_direction = current.get("wind_direction_10m")
+
+            if wind_speed_mps is None and current.get("wind_speed_10m") is not None:
+                wind_speed_mps = float(current.get("wind_speed_10m")) * 0.44704
+        except Exception:
+            pass
+
+    return build_risk_surface(
+        sensors=h2s_data.get("sensors", []),
+        wind_direction_deg=wind_direction,
+        wind_speed_mps=wind_speed_mps,
+    )
+
+@app.get("/api/ml/status")
+def ml_status():
+    import os
+    df=load_observations()
+    return {"observation_rows":len(df),"metrics":load_metrics(),"latest_prediction":predict_latest(),
+            "ingest_minutes":int(os.getenv("ML_INGEST_MINUTES","15")),
+            "retrain_hours":int(os.getenv("ML_RETRAIN_HOURS","24"))}
+
+@app.get("/api/ml/prediction")
+def ml_prediction():
+    return predict_latest()
+
+
+@app.get("/api/live-cache/status")
+def live_cache_status():
+    from pathlib import Path
+    import json, time
+    cache_dir = Path("data/live_cache")
+    files = sorted(cache_dir.glob("sonoma_raw_*.json"), key=lambda p:p.stat().st_mtime, reverse=True) if cache_dir.exists() else []
+    if not files:
+        h={"available":False,"age_seconds":None}
+    else:
+        p=files[0]
+        try:
+            payload=json.loads(p.read_text(encoding="utf-8"))
+            saved=float(payload.get("saved_at",p.stat().st_mtime))
+        except Exception:
+            saved=p.stat().st_mtime
+        h={"available":True,"age_seconds":round(max(0.0,time.time()-saved),1)}
+    return {"h2s":h,"cache_ttl_seconds":120,"stale_fallback_seconds":21600}
+
+
+@app.get("/api/h2s/diagnostics")
+async def h2s_diagnostics():
+    from app.services.h2s_diagnostics import build_h2s_diagnostics
+    return await build_h2s_diagnostics()
+
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 

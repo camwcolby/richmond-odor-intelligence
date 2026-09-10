@@ -33,6 +33,7 @@
   <button data-view="conditions">Live Conditions</button>
   <button data-view="complaints">Complaints & Response</button>
   <button data-view="report">Report an Odor</button>
+  <button data-view="model-performance">Model Performance</button>
 </nav>
 
 <main>
@@ -42,7 +43,7 @@
       <div class="section-kicker">CURRENT OUTLOOK</div>
       <h2>Odor conditions at a glance</h2>
     </div>
-    <div class="status-chip">DEMO • SIMULATED H₂S + CMMS</div>
+    <div class="status-chip">LIVE H₂S • PROTOTYPE RISK MODEL • SIMULATED CMMS</div>
   </div>
 
   <div class="hero-grid">
@@ -63,8 +64,10 @@
           <div class="card-title">Odor Risk & Source Context</div>
         </div>
         <div class="map-legend">
-          <span><i class="dot sensor-dot"></i> H₂S sensor</span>
-          <span><i class="dot hotspot-dot"></i> Sewer hotspot</span>
+          <span><i class="dot sensor-dot"></i> Live H₂S</span>
+          <span><i class="dot hotspot-dot"></i> Pump station</span>
+          <span style="color:#5EB95E;font-weight:800">○</span><span>WWTP</span>
+          <span style="color:#E6A83A;font-weight:800">●</span><span>Historical SSO</span>
         </div>
       </div>
       <div id="map"></div>
@@ -176,6 +179,12 @@
     <div id="formResult"></div>
   </article>
 </section>
+<section id="model-performance" class="view">
+  <div class="section-intro"><div><div class="section-kicker">MODEL PERFORMANCE</div><h2>How well is the forecast learning?</h2></div>
+  <div class="status-chip">MODEL PERFORMANCE • FORECAST + WASTEWATER RESIDUAL</div></div>
+  <div id="mlPerformanceContent"><div class="ml-empty"><h3>Reading model status…</h3></div></div>
+</section>
+
 </main>
 
 <footer>
@@ -184,6 +193,11 @@
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/static/ml_v104.js"></script>
+<script src="/static/forecast_v104.js"></script>
+<script src="/static/report_location_v105.js"></script>
+<script src="/static/live_cache_v107.js"></script>
 <script src="/static/app.js"></script>
+<script src="/static/driver_persistence_v112.js"></script>
 </body>
 </html>

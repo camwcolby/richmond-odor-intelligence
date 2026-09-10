@@ -1,0 +1,318 @@
+{
+  "model_version": "v2026.09.10.1926",
+  "model_type": "StabilizedTwoLayerRandomForest",
+  "target": "Next-60-minute maximum H2S plus separate excursion and wastewater residual layers",
+  "trained_at_utc": "2026-09-10T19:26:05.162822+00:00",
+  "training_through_utc": "2026-09-06 00:45:00+00:00",
+  "training_rows": 35020,
+  "walk_forward_folds_used": 6,
+  "peak_forecast": {
+    "mae_ppb": 1.6453036459148194,
+    "rmse_ppb": 2.5193214796427896,
+    "r2": 0.5533792811627976,
+    "mae_ge_30_ppb": 22.853479580677362,
+    "mae_ge_45_ppb": 43.32678172055754,
+    "validation_rows": 30012,
+    "rows_ge_30_ppb": 40,
+    "rows_ge_45_ppb": 8
+  },
+  "peak_model_note": "Peak model excludes environmental baseline and wastewater residual to preserve the stronger v0.9-style recent-H2S forecasting architecture.",
+  "excursion_definition": "Future peak rises at least 10 ppb and at least 50% above current H2S.",
+  "excursion_model": {
+    "validation_rows": 30012,
+    "positive_rows": 137,
+    "operating_threshold": 0.475,
+    "precision": 0.07142857142857142,
+    "recall": 0.0072992700729927005,
+    "balanced_accuracy": 0.5034320618147391,
+    "average_precision": 0.014903139226793684,
+    "roc_auc": 0.715367559478362,
+    "false_alert_events": 6,
+    "false_alerts_per_week": 0.13363826190712935,
+    "false_alert_constraint_per_week": 2.0,
+    "false_alert_constraint_met": true,
+    "threshold_curve": [
+      {
+        "threshold": 0.05,
+        "precision": 0.00598072876287518,
+        "recall": 0.7883211678832117,
+        "false_alert_events": 1137,
+        "false_alerts_per_week": 25.324450631401014
+      },
+      {
+        "threshold": 0.075,
+        "precision": 0.007786513456304808,
+        "recall": 0.7518248175182481,
+        "false_alert_events": 1201,
+        "false_alerts_per_week": 26.74992542507706
+      },
+      {
+        "threshold": 0.1,
+        "precision": 0.010006455777921239,
+        "recall": 0.6788321167883211,
+        "false_alert_events": 1144,
+        "false_alerts_per_week": 25.48036193695933
+      },
+      {
+        "threshold": 0.125,
+        "precision": 0.01286514303011957,
+        "recall": 0.6204379562043796,
+        "false_alert_events": 898,
+        "false_alerts_per_week": 20.001193198767027
+      },
+      {
+        "threshold": 0.15,
+        "precision": 0.014871468026343744,
+        "recall": 0.5109489051094891,
+        "false_alert_events": 727,
+        "false_alerts_per_week": 16.19250273441384
+      },
+      {
+        "threshold": 0.175,
+        "precision": 0.016681299385425813,
+        "recall": 0.41605839416058393,
+        "false_alert_events": 587,
+        "false_alerts_per_week": 13.074276623247489
+      },
+      {
+        "threshold": 0.2,
+        "precision": 0.01928600738613049,
+        "recall": 0.34306569343065696,
+        "false_alert_events": 519,
+        "false_alerts_per_week": 11.559709654966689
+      },
+      {
+        "threshold": 0.225,
+        "precision": 0.023391812865497075,
+        "recall": 0.291970802919708,
+        "false_alert_events": 404,
+        "false_alerts_per_week": 8.998309635080043
+      },
+      {
+        "threshold": 0.25,
+        "precision": 0.02197802197802198,
+        "recall": 0.1897810218978102,
+        "false_alert_events": 323,
+        "false_alerts_per_week": 7.1941930993337975
+      },
+      {
+        "threshold": 0.275,
+        "precision": 0.020227560050568902,
+        "recall": 0.11678832116788321,
+        "false_alert_events": 235,
+        "false_alerts_per_week": 5.2341652580292335
+      },
+      {
+        "threshold": 0.3,
+        "precision": 0.019230769230769232,
+        "recall": 0.072992700729927,
+        "false_alert_events": 186,
+        "false_alerts_per_week": 4.14278611912101
+      },
+      {
+        "threshold": 0.325,
+        "precision": 0.011799410029498525,
+        "recall": 0.029197080291970802,
+        "false_alert_events": 126,
+        "false_alerts_per_week": 2.8064035000497163
+      },
+      {
+        "threshold": 0.35,
+        "precision": 0.004694835680751174,
+        "recall": 0.0072992700729927005,
+        "false_alert_events": 88,
+        "false_alerts_per_week": 1.960027841304564
+      },
+      {
+        "threshold": 0.375,
+        "precision": 0.0078125,
+        "recall": 0.0072992700729927005,
+        "false_alert_events": 71,
+        "false_alerts_per_week": 1.581386099234364
+      },
+      {
+        "threshold": 0.4,
+        "precision": 0.015625,
+        "recall": 0.0072992700729927005,
+        "false_alert_events": 42,
+        "false_alerts_per_week": 0.9354678333499055
+      },
+      {
+        "threshold": 0.425,
+        "precision": 0.029411764705882353,
+        "recall": 0.0072992700729927005,
+        "false_alert_events": 21,
+        "false_alerts_per_week": 0.46773391667495273
+      },
+      {
+        "threshold": 0.45,
+        "precision": 0.043478260869565216,
+        "recall": 0.0072992700729927005,
+        "false_alert_events": 12,
+        "false_alerts_per_week": 0.2672765238142587
+      },
+      {
+        "threshold": 0.475,
+        "precision": 0.07142857142857142,
+        "recall": 0.0072992700729927005,
+        "false_alert_events": 6,
+        "false_alerts_per_week": 0.13363826190712935
+      },
+      {
+        "threshold": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_alert_events": 3,
+        "false_alerts_per_week": 0.06681913095356468
+      },
+      {
+        "threshold": 0.525,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_alert_events": 4,
+        "false_alerts_per_week": 0.08909217460475291
+      },
+      {
+        "threshold": 0.55,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_alert_events": 2,
+        "false_alerts_per_week": 0.044546087302376455
+      },
+      {
+        "threshold": 0.575,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_alert_events": 2,
+        "false_alerts_per_week": 0.044546087302376455
+      },
+      {
+        "threshold": 0.6,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_alert_events": 1,
+        "false_alerts_per_week": 0.022273043651188228
+      },
+      {
+        "threshold": 0.625,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_alert_events": 0,
+        "false_alerts_per_week": 0.0
+      },
+      {
+        "threshold": 0.65,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_alert_events": 0,
+        "false_alerts_per_week": 0.0
+      },
+      {
+        "threshold": 0.675,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_alert_events": 0,
+        "false_alerts_per_week": 0.0
+      },
+      {
+        "threshold": 0.7,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_alert_events": 0,
+        "false_alerts_per_week": 0.0
+      },
+      {
+        "threshold": 0.725,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_alert_events": 0,
+        "false_alerts_per_week": 0.0
+      },
+      {
+        "threshold": 0.75,
+        "precision": 0.0,
+        "recall": 0.0,
+        "false_alert_events": 0,
+        "false_alerts_per_week": 0.0
+      }
+    ]
+  },
+  "actual_high_events": 3,
+  "operational_high_threshold_ppb": 60.0,
+  "environmental_baseline_definition": "Environment-only H2S expected from weather, tide, time and source/wind alignment. Baseline is trained on ordinary conditions <= 30 ppb and used only for explanation.",
+  "excess_wastewater_definition": "Observed H2S above the environment-only baseline. This inferred residual is explanatory and is not fed into the peak forecast.",
+  "ambient_training_rows": 34919,
+  "ambient_fold_training_rows": [
+    4941,
+    9921,
+    14913,
+    19907,
+    24909,
+    29911
+  ],
+  "feature_importance": [
+    {
+      "feature": "rollmean60",
+      "importance": 0.6302150629606551
+    },
+    {
+      "feature": "system_h2s_max",
+      "importance": 0.08034866296933359
+    },
+    {
+      "feature": "north_h2s_ppb",
+      "importance": 0.02367411471873805
+    },
+    {
+      "feature": "rollmax60",
+      "importance": 0.02134445423680892
+    },
+    {
+      "feature": "temperature_delta3h",
+      "importance": 0.021273626084419385
+    },
+    {
+      "feature": "temperature_delta1h",
+      "importance": 0.014240484220226453
+    },
+    {
+      "feature": "wind_cos",
+      "importance": 0.012329654583312245
+    },
+    {
+      "feature": "hour_sin",
+      "importance": 0.011397856154114946
+    },
+    {
+      "feature": "temperature_f",
+      "importance": 0.011249407744971893
+    },
+    {
+      "feature": "month_cos",
+      "importance": 0.010856657649456522
+    },
+    {
+      "feature": "h2s_lag2h",
+      "importance": 0.009906919976202
+    },
+    {
+      "feature": "south_h2s_ppb",
+      "importance": 0.009573620545220202
+    },
+    {
+      "feature": "hour_cos",
+      "importance": 0.009550192412249357
+    },
+    {
+      "feature": "h2s_lag15",
+      "importance": 0.008126033857255808
+    },
+    {
+      "feature": "h2s_lag1h",
+      "importance": 0.007714325705358766
+    }
+  ],
+  "metrics_reliable": true,
+  "excursion_metrics_reliable": true,
+  "promotion_status": "stabilized_two_layer_prototype"
+}

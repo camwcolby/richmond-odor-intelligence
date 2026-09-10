@@ -6,3 +6,37 @@ venv/
 data/*.db
 .pytest_cache/
 .DS_Store
+data/ml_history.db
+data/odor_model.joblib
+data/odor_model_metrics.json
+data/live_cache/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Patch / backup artifacts
+*.v*-backup
+*.backup
+*.before_*
+*.pre_bakeoff_*
+apply_*.py
+*_PATCH.txt
+README_V*.md
+LOCAL_ENV_SNIPPET.txt
+
+# Diagnostics / temporary outputs
+sonoma_raw_probe_output.json
+probe_sonoma_raw.py
+test_sonoma_live.py
+compare_peak_feature_sets.py
+richmond_model_patch_v120.py
+
+# Local comparison outputs
+data/model_comparisons/
+
+# Python junk
+__pycache__/
+*.pyc
+.venv/
