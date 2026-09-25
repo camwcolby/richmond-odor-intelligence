@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 from app.services.live_cache import cached_async
 from app.services.h2s_fallback import h2s_fallback_from_ml_store
 from app.services.h2s_recent_recovery import recent_h2s_from_history
-from app.services.sonoma_auth import (\n    get_sonoma_token,\n    invalidate_sonoma_token,\n    raise_for_sonoma_application_error,\n    SonomaAuthorizationError,\n)
+from app.services.sonoma_auth import get_sonoma_token, invalidate_sonoma_token, raise_for_sonoma_application_error, SonomaAuthorizationError
 
 load_dotenv()
 
