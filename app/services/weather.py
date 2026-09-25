@@ -8,6 +8,7 @@ from typing import Any
 
 import httpx
 from dotenv import load_dotenv
+from app.services.live_cache import cached_async
 
 load_dotenv()
 
@@ -65,7 +66,7 @@ def _cardinal(deg):
     return directions[int((float(deg) + 11.25) // 22.5) % 16]
 
 
-async def get_weather() -> dict[str, Any]:
+async def _get_open_meteo_uncached() -> dict[str, Any]:
     params = {
         "latitude": LAT,
         "longitude": LON,
@@ -149,3 +150,55 @@ async def get_weather() -> dict[str, Any]:
         "current_units": raw.get("current_units") or {},
         "hourly_units": raw.get("hourly_units") or {},
     }
+
+
+async def get_weather() -> dict[str, Any]:
+    """
+    Current Richmond weather with resilient provider handling.
+
+    Open-Meteo is cached for 10 minutes to avoid rate-limit pressure on shared
+    hosting IPs. A last-known successful response may be served for up to
+    6 hours if the provider is temporarily unavailable or returns HTTP 429.
+
+    Sonoma is authoritative for current wind when a valid Sonoma wind
+    observation is available; Open-Meteo remains the fallback wind source.
+    """
+    weather = await cached_async(
+        "open_meteo_current_weather",
+        _get_open_meteo_uncached,
+        ttl_seconds=600,
+        stale_seconds=21600,
+    )
+
+    # Work on a shallow copy so adding Sonoma wind does not mutate the cached
+    # Open-Meteo object in memory.
+    result = dict(weather)
+    result["current"] = dict(weather.get("current") or {})
+    result["derived"] = dict(weather.get("derived") or {})
+
+    try:
+        # Local import avoids coupling the provider modules at import time.
+        from app.services.h2s import get_h2s
+
+        h2s = await get_h2s()
+        wind = h2s.get("wind") or {}
+        speed_mps = wind.get("speed_mps")
+        direction_deg = wind.get("direction_deg")
+
+        if speed_mps is not None:
+            result["current"]["wind_speed_10m"] = round(float(speed_mps) * 2.2369362921, 2)
+        if direction_deg is not None:
+            result["current"]["wind_direction_10m"] = float(direction_deg)
+            result["derived"]["wind_cardinal"] = _cardinal(direction_deg)
+
+        if speed_mps is not None or direction_deg is not None:
+            result["wind_source"] = "Sonoma Insight DMS"
+            result["wind_timestamp_utc"] = wind.get("timestamp_utc")
+        else:
+            result["wind_source"] = "Open-Meteo"
+    except Exception as exc:
+        # Weather should remain usable even if Sonoma is temporarily unavailable.
+        result["wind_source"] = "Open-Meteo"
+        result["wind_fallback_reason"] = str(exc)
+
+    return result
