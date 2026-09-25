@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 from app.services.live_cache import cached_async
 from app.services.h2s_fallback import h2s_fallback_from_ml_store
 from app.services.h2s_recent_recovery import recent_h2s_from_history
-from app.services.sonoma_auth import raise_for_sonoma_application_error, SonomaAuthorizationError
+from app.services.sonoma_auth import (\n    get_sonoma_token,\n    invalidate_sonoma_token,\n    raise_for_sonoma_application_error,\n    SonomaAuthorizationError,\n)
 
 load_dotenv()
 
@@ -126,7 +126,7 @@ def _build_form_data(start_utc: datetime, end_utc: datetime) -> dict[str, str]:
 
     return {
         "input": json.dumps(inner),
-        "token": _token(),
+        "token": "",
         "type": "highchartsJson",
         "isMulticolorSeries": "true",
         "fillMissingPoints": "true",
@@ -342,35 +342,56 @@ async def _fetch_raw(
     if start_utc is None:
         start_utc = end_utc - timedelta(hours=LOOKBACK_HOURS)
 
-    form_data = _build_form_data(start_utc, end_utc)
-
     verify = _ssl_verify_setting()
 
-    async with httpx.AsyncClient(
-        timeout=30.0,
-        verify=verify,
-        follow_redirects=True,
-    ) as client:
-        response = await client.post(
-            SONOMA_URL,
-            data=form_data,
+    # Sonoma's public Richmond application obtains a temporary token from the
+    # public-app login endpoint. Reproduce that flow server-side and retry once
+    # when Sonoma reports the token as restricted/expired.
+    for attempt in range(2):
+        form_data = _build_form_data(start_utc, end_utc)
+        form_data["token"] = await get_sonoma_token(
+            verify=verify,
+            force_refresh=(attempt == 1),
         )
 
-    response.raise_for_status()
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            verify=verify,
+            follow_redirects=True,
+        ) as client:
+            response = await client.post(
+                SONOMA_URL,
+                data=form_data,
+                headers={
+                    "Origin": "https://richmondwpcp-h2s.org",
+                    "Referer": "https://richmondwpcp-h2s.org/",
+                },
+            )
 
-    result = response.json()
+        response.raise_for_status()
+        result = response.json()
 
-    if result.get("isFailure") is True:
-        raise SonomaResponseError(
-            result.get("message") or "Sonoma returned isFailure=true"
-        )
+        try:
+            raise_for_sonoma_application_error(result)
+        except SonomaAuthorizationError:
+            invalidate_sonoma_token()
+            if attempt == 0:
+                continue
+            raise
 
-    if str(result.get("message", "")).lower() not in {"", "success"}:
-        raise SonomaResponseError(
-            f"Unexpected Sonoma response: {result.get('message')}"
-        )
+        if result.get("isFailure") is True:
+            raise SonomaResponseError(
+                result.get("message") or "Sonoma returned isFailure=true"
+            )
 
-    return result
+        if str(result.get("message", "")).lower() not in {"", "success"}:
+            raise SonomaResponseError(
+                f"Unexpected Sonoma response: {result.get('message')}"
+            )
+
+        return result
+
+    raise SonomaAuthorizationError("Unable to refresh Sonoma temporary authorization.")
 
 
 
