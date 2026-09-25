@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +50,8 @@ DEFAULT_SENSOR_COORDS = {
 }
 
 MISSING_SENTINELS = {-999, -999.0, -9999, -9999.0}
+
+RICHMOND_TZ = ZoneInfo("America/Los_Angeles")
 
 
 class SonomaConfigurationError(RuntimeError):
@@ -136,6 +139,26 @@ def _build_form_data(start_utc: datetime, end_utc: datetime) -> dict[str, str]:
     }
 
 
+def _richmond_local_from_utc(value: Any) -> str | None:
+    """Convert a Sonoma UTC timestamp to Richmond local time with DST."""
+    if value in (None, ""):
+        return None
+    try:
+        text = str(value).strip()
+        # Sonoma commonly returns naive UTC strings; explicit Z/offsets are
+        # also supported.
+        normalized = text.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(normalized)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        else:
+            dt = dt.astimezone(timezone.utc)
+        local = dt.astimezone(RICHMOND_TZ)
+        return local.strftime("%Y-%m-%d %H:%M:%S")
+    except (TypeError, ValueError):
+        return None
+
+
 def _is_valid_observation(obs: dict[str, Any]) -> bool:
     value = obs.get("value")
 
@@ -215,7 +238,7 @@ def _normalized_sensor(series: dict[str, Any]) -> dict[str, Any] | None:
         "h2s_ppb": float(latest["value"]),
         "unit": unit,
         "timestamp_utc": latest.get("utc"),
-        "timestamp_local": latest.get("lst"),
+        "timestamp_local": _richmond_local_from_utc(latest.get("utc")) or latest.get("lst"),
         "qc": latest.get("qcName"),
         "operation_qc": latest.get("opName"),
         "below_mdl": str(latest.get("opName", "")).lower() == "below mdl",
@@ -453,7 +476,7 @@ async def get_h2s_history(hours: int = 24) -> dict[str, Any]:
             rows.append(
                 {
                     "timestamp_utc": obs.get("utc"),
-                    "timestamp_local": obs.get("lst"),
+                    "timestamp_local": _richmond_local_from_utc(obs.get("utc")) or obs.get("lst"),
                     "data_stream_id": stream_id,
                     "site_id": obs.get("siteId") or series.get("siteId"),
                     "site_name": site_info.get("siteName"),
