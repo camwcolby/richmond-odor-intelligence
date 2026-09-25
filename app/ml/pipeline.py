@@ -1317,12 +1317,19 @@ def predict_latest():
 
     if raw.empty:
         return {
-            "model_available": False
+            "model_available": False,
+            "reason": "observation history is rebuilding",
         }
 
-    artifact = joblib.load(
-        MODEL_PATH
-    )
+    try:
+        artifact = joblib.load(
+            MODEL_PATH
+        )
+    except Exception as exc:
+        return {
+            "model_available": False,
+            "reason": f"model artifact unavailable: {type(exc).__name__}",
+        }
 
     x = _base_features(
         raw
