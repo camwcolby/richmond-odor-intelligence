@@ -154,30 +154,39 @@ async def _get_open_meteo_uncached() -> dict[str, Any]:
 
 async def get_weather() -> dict[str, Any]:
     """
-    Current Richmond weather with resilient provider handling.
+    Resilient current conditions.
 
-    Open-Meteo is cached for 10 minutes to avoid rate-limit pressure on shared
-    hosting IPs. A last-known successful response may be served for up to
-    6 hours if the provider is temporarily unavailable or returns HTTP 429.
-
-    Sonoma is authoritative for current wind when a valid Sonoma wind
-    observation is available; Open-Meteo remains the fallback wind source.
+    Sonoma wind is independent and authoritative. Open-Meteo supplies
+    temperature/rain/humidity when available, but an Open-Meteo outage or 429
+    must never suppress valid Sonoma wind.
     """
-    weather = await cached_async(
-        "open_meteo_current_weather",
-        _get_open_meteo_uncached,
-        ttl_seconds=600,
-        stale_seconds=21600,
-    )
+    result: dict[str, Any] = {
+        "source": "mixed",
+        "provider_status": "partial",
+        "current": {},
+        "derived": {},
+        "current_units": {},
+        "hourly_units": {},
+    }
 
-    # Work on a shallow copy so adding Sonoma wind does not mutate the cached
-    # Open-Meteo object in memory.
-    result = dict(weather)
-    result["current"] = dict(weather.get("current") or {})
-    result["derived"] = dict(weather.get("derived") or {})
+    open_meteo_error = None
+    try:
+        weather = await cached_async(
+            "open_meteo_current_weather",
+            _get_open_meteo_uncached,
+            ttl_seconds=600,
+            stale_seconds=21600,
+        )
+        result.update(dict(weather))
+        result["current"] = dict(weather.get("current") or {})
+        result["derived"] = dict(weather.get("derived") or {})
+        result["open_meteo_available"] = True
+    except Exception as exc:
+        open_meteo_error = str(exc)
+        result["open_meteo_available"] = False
+        result["open_meteo_error"] = open_meteo_error
 
     try:
-        # Local import avoids coupling the provider modules at import time.
         from app.services.h2s import get_h2s
 
         h2s = await get_h2s()
@@ -194,11 +203,16 @@ async def get_weather() -> dict[str, Any]:
         if speed_mps is not None or direction_deg is not None:
             result["wind_source"] = "Sonoma Insight DMS"
             result["wind_timestamp_utc"] = wind.get("timestamp_utc")
+            result["provider_status"] = "live" if result["open_meteo_available"] else "partial"
         else:
-            result["wind_source"] = "Open-Meteo"
+            result["wind_source"] = "Open-Meteo" if result["open_meteo_available"] else None
     except Exception as exc:
-        # Weather should remain usable even if Sonoma is temporarily unavailable.
-        result["wind_source"] = "Open-Meteo"
-        result["wind_fallback_reason"] = str(exc)
+        result["sonoma_wind_error"] = str(exc)
+        result["wind_source"] = "Open-Meteo" if result["open_meteo_available"] else None
+
+    if result["open_meteo_available"]:
+        result["weather_timestamp"] = (result.get("current") or {}).get("time")
+    if not result["open_meteo_available"] and not result.get("wind_source"):
+        result["provider_status"] = "unavailable"
 
     return result
