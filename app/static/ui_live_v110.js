@@ -205,7 +205,7 @@
     const rt=firstTs(weather,["precipitation_timestamp_utc","rain_timestamp_utc","timestamp_utc","timestamp","time"]);
     const tt=firstTs(tide,["timestamp_utc","timestamp","time","date_time"]);
 
-    setStamp(findCard("Wind"),wt,"Open-Meteo");
+    setStamp(findCard("Wind"),weather?.wind_timestamp_utc||wt,weather?.wind_source||"Open-Meteo");
     setStamp(findCard("Temperature"),wt,"Open-Meteo");
     setStamp(findCard("Rainfall"),rt,"Open-Meteo");
     setStamp(findCard("Tide"),tt,"NOAA");
