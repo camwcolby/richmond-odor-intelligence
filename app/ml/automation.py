@@ -78,9 +78,6 @@ async def _repair_history():
 def _daily_retrain_due(now_utc: datetime) -> bool:
     now_local = now_utc.astimezone(PACIFIC)
     hour = int(os.getenv("ML_DAILY_RETRAIN_HOUR", "2"))
-    if now_local.hour < hour:
-        return False
-
     yesterday = now_local.date() - timedelta(days=1)
     history_date = _history_through_date()
     trained_date = _training_through_date()
