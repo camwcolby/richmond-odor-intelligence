@@ -154,20 +154,27 @@
   function combinedDrivers(){
     const out=[];
 
+    function influenceLabel(score){
+      if(score>=45) return "High influence";
+      if(score>=20) return "Moderate influence";
+      return "Low influence";
+    }
+
     state.snapshot.forEach((score,name)=>{
       out.push({
         name,
         score,
-        display:String(Math.round(score))
+        display:influenceLabel(score)
       });
     });
 
     out.push(...mlDrivers(state.lastPrediction));
 
-    // Deduplicate by name.
+    // Deduplicate by normalized name. ML-derived rows intentionally replace
+    // any legacy copy so Forecast H₂S / Wastewater / Excursion appear once.
     const dedup=new Map();
     out.forEach(d=>{
-      dedup.set(d.name,d);
+      dedup.set(normalizeName(d.name),d);
     });
 
     return [...dedup.values()]
