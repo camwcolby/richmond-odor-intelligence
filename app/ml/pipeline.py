@@ -396,11 +396,11 @@ def _peak_regressor():
         (
             "model",
             RandomForestRegressor(
-                n_estimators=350,
+                n_estimators=220,
                 max_depth=12,
                 min_samples_leaf=3,
                 random_state=42,
-                n_jobs=-1,
+                n_jobs=1,
             ),
         ),
     ])
@@ -418,11 +418,11 @@ def _ambient_regressor():
         (
             "model",
             RandomForestRegressor(
-                n_estimators=325,
+                n_estimators=180,
                 max_depth=10,
                 min_samples_leaf=5,
                 random_state=17,
-                n_jobs=-1,
+                n_jobs=1,
             ),
         ),
     ])
@@ -440,12 +440,12 @@ def _excursion_classifier():
         (
             "model",
             RandomForestClassifier(
-                n_estimators=450,
+                n_estimators=240,
                 max_depth=10,
                 min_samples_leaf=4,
                 class_weight="balanced_subsample",
                 random_state=23,
-                n_jobs=-1,
+                n_jobs=1,
             ),
         ),
     ])
