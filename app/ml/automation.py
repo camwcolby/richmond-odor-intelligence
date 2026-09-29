@@ -52,7 +52,7 @@ async def _repair_history():
     now. The overlap reconciles late/corrected source observations.
     """
     first, latest, rows = _history_bounds()
-    bootstrap_days = max(30, int(os.getenv("ML_BOOTSTRAP_DAYS", "365")))
+    bootstrap_days = max(30, int(os.getenv("ML_BOOTSTRAP_DAYS", "180")))
     overlap_hours = max(6, int(os.getenv("ML_REPAIR_OVERLAP_HOURS", "30")))
     now = datetime.now(timezone.utc)
 
@@ -99,10 +99,13 @@ def _maybe_train(now):
         return
 
     try:
+        print("[ML] retrain starting; history through", _history_through_date())
         metrics = train_model()
         print("[ML] daily retrain complete:", (metrics or {}).get("model_version"))
     except Exception as exc:
-        print("[ML] daily retrain skipped:", exc)
+        import traceback
+        print("[ML] daily retrain failed:", repr(exc))
+        traceback.print_exc()
 
 
 def _loop():
