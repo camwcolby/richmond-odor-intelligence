@@ -396,7 +396,7 @@ def _peak_regressor():
         (
             "model",
             RandomForestRegressor(
-                n_estimators=220,
+                n_estimators=120,
                 max_depth=12,
                 min_samples_leaf=3,
                 random_state=42,
@@ -418,7 +418,7 @@ def _ambient_regressor():
         (
             "model",
             RandomForestRegressor(
-                n_estimators=180,
+                n_estimators=100,
                 max_depth=10,
                 min_samples_leaf=5,
                 random_state=17,
@@ -440,7 +440,7 @@ def _excursion_classifier():
         (
             "model",
             RandomForestClassifier(
-                n_estimators=240,
+                n_estimators=120,
                 max_depth=10,
                 min_samples_leaf=4,
                 class_weight="balanced_subsample",
@@ -451,7 +451,7 @@ def _excursion_classifier():
     ])
 
 
-def _walk_folds(frame, n_folds=6):
+def _walk_folds(frame, n_folds=3):
     n = len(frame)
 
     if n < 700:
