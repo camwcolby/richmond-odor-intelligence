@@ -119,8 +119,7 @@ def _loop():
         result = asyncio.run(_repair_history())
         print("[ML] startup history repair:", result)
         if os.getenv("ML_RUNTIME_RETRAIN_ENABLED", "false").lower() in {"true", "1", "yes", "on"}:
-            if os.getenv("ML_RUNTIME_RETRAIN_ENABLED", "false").lower() in {"true", "1", "yes", "on"}:
-                _maybe_train(datetime.now(timezone.utc))
+            _maybe_train(datetime.now(timezone.utc))
         else:
             print("[ML] runtime retraining disabled; serving committed model artifact")
     except Exception as exc:
@@ -130,7 +129,8 @@ def _loop():
         try:
             result = asyncio.run(update_recent_history(30))
             print("[ML] recent history update:", result)
-            _maybe_train(datetime.now(timezone.utc))
+            if os.getenv("ML_RUNTIME_RETRAIN_ENABLED", "false").lower() in {"true", "1", "yes", "on"}:
+                _maybe_train(datetime.now(timezone.utc))
         except Exception as exc:
             print("[ML] ingest failed:", exc)
 
