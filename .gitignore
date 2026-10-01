@@ -7,8 +7,6 @@ data/*.db
 .pytest_cache/
 .DS_Store
 data/ml_history.db
-data/odor_model.joblib
-data/odor_model_metrics.json
 data/live_cache/
 
 # Local secrets
