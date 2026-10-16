@@ -454,7 +454,7 @@ def _excursion_classifier():
     ])
 
 
-def _walk_folds(frame, n_folds=1):
+def _walk_folds(frame, n_folds=4):
     n = len(frame)
 
     if n < 700:
@@ -477,8 +477,13 @@ def _walk_folds(frame, n_folds=1):
         if te_end - tr_end < 100:
             break
 
+        # Purge the forecast horizon: labels at the end of training
+        # must not include H2S measurements from the validation period.
+        purged_end = tr_end - FORECAST_HORIZON_STEPS
+        if purged_end < 350:
+            continue
         folds.append((
-            frame.iloc[:tr_end].copy(),
+            frame.iloc[:purged_end].copy(),
             frame.iloc[tr_end:te_end].copy(),
         ))
 
@@ -877,7 +882,23 @@ def train_model():
     y = pv["actual"].astype(float)
     pp = pv["predicted"].astype(float).values
 
+    # Persistence is the minimum skill benchmark for a short-horizon forecast.
+    # It assumes the next-hour peak equals the currently observed H2S.
+    current_lookup = labeled.set_index("timestamp_utc")["system_h2s_max"]
+    persistence = pd.to_numeric(
+        pv["timestamp_utc"].map(current_lookup), errors="coerce"
+    )
+    persistence_valid = persistence.notna()
+    persistence_mae = (
+        float(mean_absolute_error(y[persistence_valid], persistence[persistence_valid]))
+        if persistence_valid.any() else None
+    )
     peak_metrics = {
+        "persistence_mae_ppb": persistence_mae,
+        "mae_improvement_over_persistence_ppb": (
+            float(persistence_mae - mean_absolute_error(y, pp))
+            if persistence_mae is not None else None
+        ),
         "mae_ppb": float(
             mean_absolute_error(
                 y,
@@ -917,6 +938,23 @@ def train_model():
         "rows_ge_45_ppb": int(
             (y >= 45).sum()
         ),
+        "rows_ge_60_ppb": int((y >= 60).sum()),
+        "mae_ge_60_ppb": _subset_mae(y, pp, 60),
+        "threshold_detection": {
+            str(int(limit)): {
+                "actual_positive_rows": int((y >= limit).sum()),
+                "predicted_positive_rows": int((pp >= limit).sum()),
+                "recall": (
+                    float(((y >= limit) & (pp >= limit)).sum() / (y >= limit).sum())
+                    if (y >= limit).any() else None
+                ),
+                "precision": (
+                    float(((y >= limit) & (pp >= limit)).sum() / (pp >= limit).sum())
+                    if (pp >= limit).any() else None
+                ),
+            }
+            for limit in (30.0, 45.0, 60.0)
+        },
     }
 
     if excursion_predictions:
@@ -1228,6 +1266,7 @@ def train_model():
         "metrics_reliable": (
             len(folds) >= 3
             and len(pv) >= 1000
+            and int((y >= 30).sum()) >= 20
         ),
         "excursion_metrics_reliable": (
             exc_metrics.get(
