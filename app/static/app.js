@@ -45,8 +45,9 @@ async function loadRisk(){
 
   q('#riskLevel').textContent=r.current_level.toUpperCase();
   q('#riskPct').textContent=Math.round(r.current_probability*100)+'%';
-  q('#riskNarrative').textContent=
-    'Live-data engineering risk index using Sonoma H₂S plus current environmental conditions. Not yet a trained ML probability.';
+  q('#riskNarrative').textContent= r.observed_risk_floor
+    ? 'Observed H₂S '+Number(r.observed_h2s_max_ppb).toFixed(1)+' ppb enforces a minimum '+r.observed_risk_floor+' risk. Engineering index, not a calibrated probability.'
+    : 'Live-data engineering risk index using Sonoma H₂S plus current environmental conditions. Not yet a trained ML probability.';
 
   q('#drivers').innerHTML=r.drivers.map(d=>
     `<div class="driver">
@@ -103,6 +104,7 @@ async function loadRiskSurface(){
   });
 
   if(d.wind_direction_from_deg!==null && d.wind_direction_from_deg!==undefined){
+    // Meteorological wind is reported FROM; transport arrows point TO (+180°).
     const windToward=(Number(d.wind_direction_from_deg)+180)%360;
 
     const icon=L.divIcon({
@@ -120,8 +122,8 @@ async function loadRiskSurface(){
 
     L.marker([37.946,-122.389],{icon})
       .bindPopup(
-        `<b>Wind</b><br>`+
-        `From ${Number(d.wind_direction_from_deg).toFixed(0)}°`+
+        `<b>Wind transport direction</b><br>`+
+        `From ${Number(d.wind_direction_from_deg).toFixed(0)}° · Toward ${windToward.toFixed(0)}°`+
         `${d.wind_speed_mps!==null && d.wind_speed_mps!==undefined
           ? `<br>${Number(d.wind_speed_mps).toFixed(1)} m/s`
           : ''}`
@@ -273,7 +275,7 @@ async function loadConditions(){
     if(windSpeed!==null && windSpeed!==undefined){
       q('#wind').textContent=
         `${Number(windSpeed).toFixed(1)} mph` +
-        (windCardinal ? ` • ${windCardinal}` : '') +
+        (windCardinal ? ` • from ${windCardinal}` : '') +
         (windDir!==null && windDir!==undefined ? ` (${Math.round(Number(windDir))}°)` : '');
     } else {
       q('#wind').textContent='Unavailable';
