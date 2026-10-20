@@ -8,7 +8,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, HistGradientBoostingRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
     average_precision_score,
@@ -785,6 +785,7 @@ def train_model():
         )
 
     peak_predictions = []
+    challenger_predictions = []
     excursion_predictions = []
     ambient_fold_rows = []
 
@@ -820,6 +821,28 @@ def train_model():
                 te[PEAK_FEATURES]
             ),
         )
+
+        # Research-only challenger: emphasize rare elevated future peaks.
+        # Never replaces the deployed peak model automatically.
+        challenger = Pipeline([
+            ("impute", SimpleImputer(strategy="median")),
+            ("model", HistGradientBoostingRegressor(
+                max_iter=90, max_leaf_nodes=15, learning_rate=0.055,
+                min_samples_leaf=25, l2_regularization=2.0,
+                random_state=42,
+            )),
+        ])
+        peak_weights = np.where(
+            tr["future_60m_max_h2s"].to_numpy() >= 60, 12.0,
+            np.where(tr["future_60m_max_h2s"].to_numpy() >= 30, 5.0, 1.0),
+        )
+        challenger.fit(
+            tr[PEAK_FEATURES], tr["future_60m_max_h2s"],
+            model__sample_weight=peak_weights,
+        )
+        challenger_predictions.append(np.maximum(
+            0.0, challenger.predict(te[PEAK_FEATURES])
+        ))
 
         peak_predictions.append(
             pd.DataFrame({
@@ -881,6 +904,30 @@ def train_model():
 
     y = pv["actual"].astype(float)
     pp = pv["predicted"].astype(float).values
+
+    challenger_pp = np.concatenate(challenger_predictions)
+    challenger_metrics = {
+        "model_type": "WeightedHistGradientBoostingRegressor",
+        "production_promoted": False,
+        "mae_ppb": float(mean_absolute_error(y, challenger_pp)),
+        "mae_ge_30_ppb": _subset_mae(y, challenger_pp, 30),
+        "mae_ge_45_ppb": _subset_mae(y, challenger_pp, 45),
+        "mae_ge_60_ppb": _subset_mae(y, challenger_pp, 60),
+        "threshold_detection": {
+            str(int(limit)): {
+                "positive_rows": int((y >= limit).sum()),
+                "recall": (
+                    float(((y >= limit) & (challenger_pp >= limit)).sum() / (y >= limit).sum())
+                    if (y >= limit).any() else None
+                ),
+                "precision": (
+                    float(((y >= limit) & (challenger_pp >= limit)).sum() / (challenger_pp >= limit).sum())
+                    if (challenger_pp >= limit).any() else None
+                ),
+            }
+            for limit in (30.0, 45.0, 60.0)
+        },
+    }
 
     # Persistence is the minimum skill benchmark for a short-horizon forecast.
     # It assumes the next-hour peak equals the currently observed H2S.
@@ -1232,6 +1279,7 @@ def train_model():
             len(folds)
         ),
         "peak_forecast": peak_metrics,
+        "spike_challenger": challenger_metrics,
         "peak_model_note": (
             "Peak model excludes environmental baseline and wastewater residual "
             "to preserve the stronger v0.9-style recent-H2S forecasting architecture."
