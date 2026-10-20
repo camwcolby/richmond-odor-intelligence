@@ -756,7 +756,7 @@ def _choose_operating_threshold(validation):
     return best, rows
 
 
-def train_model():
+def train_model(persist=True):
     raw = load_observations()
 
     if raw.empty:
@@ -1327,34 +1327,35 @@ def train_model():
         ),
     }
 
-    MODEL_PATH.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    if persist:
+        MODEL_PATH.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
 
-    joblib.dump(
-        {
-            "version": version,
-            "ambient_model": ambient_model,
-            "peak_model": peak_model,
-            "excursion_model": exc_model,
-            "env_features": ENV_FEATURES,
-            "peak_features": PEAK_FEATURES,
-            "excursion_features": (
-                EXCURSION_FEATURES
-            ),
-            "excursion_operating_threshold": (
-                exc_metrics[
-                    "operating_threshold"
-                ]
-            ),
-        },
-        MODEL_PATH,
-    )
+        joblib.dump(
+            {
+                "version": version,
+                "ambient_model": ambient_model,
+                "peak_model": peak_model,
+                "excursion_model": exc_model,
+                "env_features": ENV_FEATURES,
+                "peak_features": PEAK_FEATURES,
+                "excursion_features": (
+                    EXCURSION_FEATURES
+                ),
+                "excursion_operating_threshold": (
+                    exc_metrics[
+                        "operating_threshold"
+                    ]
+                ),
+            },
+            MODEL_PATH,
+        )
 
-    save_metrics(
-        metrics
-    )
+        save_metrics(
+            metrics
+        )
 
     return metrics
 
