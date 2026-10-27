@@ -18,6 +18,8 @@ from app.ml.risk import risk_forecast
 from app.ml.store import init_ml_db, load_metrics, load_observations
 from app.ml.pipeline import predict_latest
 from app.ml.backtest import backtest
+from app.ml.history import ingest_range
+from zoneinfo import ZoneInfo
 from app.ml.automation import start_ml_automation
 
 app = FastAPI(title="Richmond Odor Intelligence", version="0.1.0")
@@ -219,11 +221,29 @@ def ml_prediction():
 
 
 @app.get("/api/ml/backtest")
-def ml_backtest(start_date: str = "2026-10-19", end_date: str = "2026-10-25"):
+async def ml_backtest(start_date: str = "2026-10-19", end_date: str = "2026-10-25"):
     try:
-        return backtest(start_date=start_date, end_date=end_date)
+        start_local = datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=ZoneInfo("America/Los_Angeles"))
+        end_local = datetime.strptime(end_date, "%Y-%m-%d").replace(tzinfo=ZoneInfo("America/Los_Angeles"))
+        if end_local < start_local or (end_local - start_local).days > 30:
+            raise ValueError("Date range must be between 1 and 31 days.")
+        start_utc = (start_local - timedelta(days=2)).astimezone(timezone.utc)
+        end_utc = (end_local + timedelta(days=2)).astimezone(timezone.utc)
+        existing = load_observations()
+        if existing.empty or existing.loc[
+            (existing.timestamp_utc >= start_utc) & (existing.timestamp_utc < end_utc)
+        ].empty:
+            recovery = await ingest_range(start_utc, end_utc)
+        else:
+            recovery = None
+        result = backtest(start_date=start_date, end_date=end_date)
+        if recovery is not None:
+            result["on_demand_history_recovery"] = recovery
+        return result
     except (ValueError, OverflowError) as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Historical data recovery or replay failed: {type(exc).__name__}: {exc}")
 
 
 @app.get("/api/live-cache/status")
