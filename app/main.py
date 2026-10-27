@@ -17,6 +17,7 @@ from app.ml.risk import risk_forecast
 
 from app.ml.store import init_ml_db, load_metrics, load_observations
 from app.ml.pipeline import predict_latest
+from app.ml.backtest import backtest
 from app.ml.automation import start_ml_automation
 
 app = FastAPI(title="Richmond Odor Intelligence", version="0.1.0")
@@ -215,6 +216,14 @@ def ml_status():
 @app.get("/api/ml/prediction")
 def ml_prediction():
     return predict_latest()
+
+
+@app.get("/api/ml/backtest")
+def ml_backtest(start_date: str = "2026-10-19", end_date: str = "2026-10-25"):
+    try:
+        return backtest(start_date=start_date, end_date=end_date)
+    except (ValueError, OverflowError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @app.get("/api/live-cache/status")
