@@ -10,6 +10,10 @@ def main():
     u=s.add_parser("update"); u.add_argument("--hours",type=int,default=12)
     s.add_parser("event-test");
     ev=s.add_parser("event-data"); ev.add_argument("--start",default="2026-10-17"); ev.add_argument("--end",default="2026-10-27"); s.add_parser("train"); s.add_parser("benchmark"); s.add_parser("predict"); s.add_parser("status")
+    remote=s.add_parser("import-render")
+    remote.add_argument("--url",default="https://richmond-odor-intelligence.onrender.com")
+    remote.add_argument("--start",default="2026-10-17")
+    remote.add_argument("--end",default="2026-10-27")
     a=p.parse_args(); init_ml_db()
     if a.cmd=="bootstrap":
         print(json.dumps(asyncio.run(backfill_days(a.days)),indent=2))
@@ -22,6 +26,26 @@ def main():
         end=datetime.fromisoformat(a.end).replace(tzinfo=timezone.utc)
         if end <= start or (end-start).days > 35: p.error("Choose a positive range no longer than 35 days")
         print(json.dumps(asyncio.run(ingest_range(start,end)),indent=2))
+    elif a.cmd=="import-render":
+        import os, getpass, urllib.request, urllib.parse, urllib.error
+        from app.ml.store import upsert_observations
+        from datetime import date
+        start=date.fromisoformat(a.start); end=date.fromisoformat(a.end)
+        if end <= start or (end-start).days > 35: p.error("Choose a positive range no longer than 35 days")
+        token=os.environ.get("ML_EXPORT_TOKEN") or getpass.getpass("Render ML export token: ")
+        if not token: p.error("Export token is required")
+        url=a.url.rstrip("/")+"/api/ml/observations/export?"+urllib.parse.urlencode(
+            {"start_date":a.start,"end_date":a.end})
+        req=urllib.request.Request(url,headers={"X-Export-Token":token,"Accept":"application/json"})
+        try:
+            with urllib.request.urlopen(req,timeout=90) as response:
+                payload=json.load(response)
+        except urllib.error.HTTPError as exc:
+            p.error(f"Render export returned HTTP {exc.code}; verify token, deployment and dates")
+        rows=payload.get("rows",[])
+        count=upsert_observations(rows)
+        print(json.dumps({"imported_rows":count,"render_rows":payload.get("row_count"),
+                          "date_start":a.start,"date_end":a.end},indent=2))
     elif a.cmd=="event-test":
         from app.ml.event_experiment import run
         print(json.dumps(run(), indent=2, default=str))
