@@ -155,6 +155,49 @@ def _nowcast_risk_payload(n):
     }
 
 
+@app.get("/api/spatial/odor-plume")
+async def odor_plume():
+    """Indicative odor footprint from the plant, shaped by wind and colored by the nowcast."""
+    from app.ml.nowcast import predict_nowcast
+    from app.ml.store import load_observations
+    from app.services.plume import build_odor_plume
+    import pandas as pd
+
+    try:
+        n = predict_nowcast()
+    except Exception as exc:
+        print("[plume] nowcast unavailable:", repr(exc))
+        n = {"available": False}
+    if not n.get("available"):
+        return {"type": "FeatureCollection", "features": [],
+                "properties": {"available": False, "reason": n.get("reason", "nowcast unavailable")}}
+
+    # Wind the model saw: newest observation with wind data, within 2 hours of the nowcast time.
+    when = pd.Timestamp(n["timestamp_utc"])
+    wind_from = wind_mps = None
+    obs = load_observations()
+    if not obs.empty:
+        w = obs.dropna(subset=["wind_speed_mps", "wind_direction_deg"])
+        w = w[(w.timestamp_utc <= when) & (w.timestamp_utc >= when - pd.Timedelta("2h"))]
+        if not w.empty:
+            wind_mps = float(w.wind_speed_mps.iloc[-1])
+            wind_from = float(w.wind_direction_deg.iloc[-1])
+    if wind_mps is None:
+        try:
+            cur = (await get_weather()).get("current", {})
+            wind_from = cur.get("wind_direction_10m")
+            if cur.get("wind_speed_10m") is not None:
+                wind_mps = float(cur["wind_speed_10m"]) * 0.44704
+        except Exception:
+            pass
+
+    out = build_odor_plume(wind_from, wind_mps, n["state"], n["risk_percentile"],
+                           when=when.to_pydatetime())
+    out["properties"].update({"available": True, "timestamp_utc": n["timestamp_utc"],
+                              "stale": n.get("stale", False)})
+    return out
+
+
 @app.get("/api/ml/nowcast")
 def ml_nowcast():
     from app.ml.nowcast import predict_nowcast
