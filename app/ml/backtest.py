@@ -62,7 +62,28 @@ def backtest(start_date="2026-10-19", end_date="2026-10-25"):
             ]
             hits = prior.loc[prior.prediction >= threshold]
             first = hits.iloc[0] if not hits.empty else None
+            context = selected.loc[
+                (selected.timestamp_utc >= onset_ts - pd.Timedelta(hours=4))
+                & (selected.timestamp_utc <= onset_ts + pd.Timedelta(hours=1))
+            ]
+            timeline = []
+            for _, sample in context.iterrows():
+                def safe_num(key):
+                    value = sample.get(key)
+                    return round(float(value), 3) if pd.notna(value) else None
+                timeline.append({
+                    "timestamp_local": sample.timestamp_utc.tz_convert(PACIFIC).isoformat(),
+                    "north_h2s_ppb": safe_num("north_h2s_ppb"),
+                    "south_h2s_ppb": safe_num("south_h2s_ppb"),
+                    "forecast_peak_ppb": safe_num("prediction"),
+                    "wind_direction_from_deg": safe_num("wind_direction_deg"),
+                    "wind_speed_mps": safe_num("wind_speed_mps"),
+                    "temperature_f": safe_num("temperature_f"),
+                    "humidity_pct": safe_num("relative_humidity_pct"),
+                    "tide_ft_mllw": safe_num("tide_ft_mllw"),
+                })
             events.append({
+                "timeline_4h_before_1h_after": timeline,
                 "threshold_ppb": threshold,
                 "onset_utc": onset_ts.isoformat(),
                 "onset_local": onset_ts.tz_convert(PACIFIC).isoformat(),
