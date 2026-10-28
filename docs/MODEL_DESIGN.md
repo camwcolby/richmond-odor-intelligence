@@ -1,6 +1,17 @@
 # Model design
 
-The demo intentionally does **not** pretend a trained model exists. `app/ml/risk.py`
+## Current: trained risk nowcast
+
+The Odor Forecast card is driven by `app/ml/nowcast.py`: a per-sensor logistic
+model of a 20+ ppb reading in the next 3 hours, blended with recent readings and
+shown as a single state (Elevated at the 90th percentile, clearing after 2 hours
+below). Method and two-year validation are in `analysis/h2s-nowcast/README.md`.
+If the nowcast artifact or recent history is unavailable, `/api/risk` falls back
+to the engineering score in `app/ml/risk.py`.
+
+## Original prototype notes
+
+The first demo did not pretend a trained model existed. `app/ml/risk.py`
 returns an interpretable engineering score through an interface designed to be
 replaced by a supervised model.
 

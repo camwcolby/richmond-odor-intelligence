@@ -42,22 +42,54 @@ async function loadRisk(){
   const r=await getJson('/api/risk');
   const card=q('.risk-card');
   card.className='risk-card '+r.current_level;
+  const nowcast=String(r.method||'').startsWith('nowcast');
 
-  q('#riskLevel').textContent=r.current_level.toUpperCase();
-  q('#riskPct').textContent=Math.round(r.current_probability*100)+'%';
-  q('#riskNarrative').textContent= r.observed_risk_floor
+  q('#riskLevel').textContent=(r.display_level||r.current_level).toUpperCase();
+  q('#riskPct').textContent=r.pct_label||(Math.round(r.current_probability*100)+'%');
+  let narrative=r.narrative || (r.observed_risk_floor
     ? 'Observed H₂S '+Number(r.observed_h2s_max_ppb).toFixed(1)+' ppb enforces a minimum '+r.observed_risk_floor+' risk. Engineering index, not a calibrated probability.'
-    : 'Live-data engineering risk index using Sonoma H₂S plus current environmental conditions. Not yet a trained ML probability.';
+    : 'Live-data engineering risk index using Sonoma H₂S plus current environmental conditions. Not yet a trained ML probability.');
+  if(r.elevated_since_utc){
+    narrative+=' Elevated since '+new Date(r.elevated_since_utc).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+'.';
+  }
+  q('#riskNarrative').textContent=narrative;
+
+  // Stale-data warning stays visible even though the narrative line is hidden by CSS.
+  let staleEl=q('#riskStale');
+  if(!staleEl){
+    staleEl=document.createElement('div');
+    staleEl.id='riskStale';
+    staleEl.className='risk-stale';
+    q('#riskPct').insertAdjacentElement('afterend',staleEl);
+  }
+  staleEl.textContent=r.stale_note||'';
+  staleEl.style.display=r.stale_note?'block':'none';
 
   q('#drivers').innerHTML=r.drivers.map(d=>
     `<div class="driver">
       <div class="driver-top">
         <span>${d.feature}</span>
-        <b>${Math.round(d.importance*100)}</b>
+        <b>${Math.round(d.importance*100)}${nowcast?'%':''}</b>
       </div>
       <div class="bar"><i style="width:${d.importance*100}%"></i></div>
     </div>`
   ).join('');
+
+  const stripTitle=q('#forecastStrip')?.closest('.panel')?.querySelector('.card-title');
+  if(nowcast && r.recent_hours){
+    if(stripTitle){
+      stripTitle.textContent='Last 6 hours';
+      const kicker=stripTitle.previousElementSibling;
+      if(kicker) kicker.textContent='RISK STATE';
+    }
+    q('#forecastStrip').innerHTML=r.recent_hours.map(x=>
+      `<div class="forecast-hour">
+        <span>${new Date(x.hour_utc).toLocaleTimeString([], {hour:'numeric'})}</span>
+        <strong style="color:${riskColor(x.elevated?'High':'Low')}">${x.elevated?'Elevated':'Normal'}</strong>
+      </div>`
+    ).join('');
+    return;
+  }
 
   q('#forecastStrip').innerHTML=r.hourly.map((x,i)=>
     `<div class="forecast-hour">

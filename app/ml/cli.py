@@ -10,6 +10,8 @@ def main():
     u=s.add_parser("update"); u.add_argument("--hours",type=int,default=12)
     s.add_parser("event-test");
     ev=s.add_parser("event-data"); ev.add_argument("--start",default="2026-10-17"); ev.add_argument("--end",default="2026-10-27"); s.add_parser("train"); s.add_parser("benchmark"); s.add_parser("predict"); s.add_parser("status")
+    tn=s.add_parser("train-nowcast"); tn.add_argument("--csv",default=None,help="observation CSV (ml_observations columns); default: local history db")
+    s.add_parser("nowcast")
     remote=s.add_parser("import-render")
     remote.add_argument("--url",default="https://richmond-odor-intelligence.onrender.com")
     remote.add_argument("--start",default="2026-10-17")
@@ -46,6 +48,14 @@ def main():
         count=upsert_observations(rows)
         print(json.dumps({"imported_rows":count,"render_rows":payload.get("row_count"),
                           "date_start":a.start,"date_end":a.end},indent=2))
+    elif a.cmd=="train-nowcast":
+        import pandas as pd
+        from app.ml.nowcast import train_nowcast
+        obs=pd.read_csv(a.csv) if a.csv else load_observations()
+        print(json.dumps(train_nowcast(obs),indent=2))
+    elif a.cmd=="nowcast":
+        from app.ml.nowcast import predict_nowcast
+        print(json.dumps(predict_nowcast(),indent=2))
     elif a.cmd=="event-test":
         from app.ml.event_experiment import run
         print(json.dumps(run(), indent=2, default=str))
