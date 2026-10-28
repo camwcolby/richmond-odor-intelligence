@@ -6,8 +6,18 @@ The Odor Forecast card is driven by `app/ml/nowcast.py`: a per-sensor logistic
 model of a 20+ ppb reading in the next 3 hours, blended with recent readings and
 shown as a single state (Elevated at the 90th percentile, clearing after 2 hours
 below). Method and two-year validation are in `analysis/h2s-nowcast/README.md`.
-If the nowcast artifact or recent history is unavailable, `/api/risk` falls back
-to the engineering score in `app/ml/risk.py`.
+If the model cannot score yet (history still loading after a restart), the card
+shows an Updating state; there is no fallback to the old engineering score.
+
+### Live operation
+- History is a rebuildable cache: after a restart the last 10 days are ingested
+  first (the card scores after about 6 hours of data), then older history is
+  filled newest-first in 14-day chunks back to `ML_BOOTSTRAP_DAYS` (default 730).
+- Weekly (`NOWCAST_RETRAIN_DAYS`, default 7) the model retrains on all history
+  and `app/ml/nowcast_eval.py` recomputes the month-blocked validation, driver
+  shares, warning times and exceedance table shown on the Model Performance tab.
+  Retraining waits until history spans `NOWCAST_MIN_TRAIN_DAYS` (default 300).
+- The map footprint (`app/services/plume.py`) is the only risk overlay.
 
 ## Original prototype notes
 

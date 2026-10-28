@@ -65,6 +65,12 @@ async function loadRisk(){
   staleEl.textContent=r.stale_note||'';
   staleEl.style.display=r.stale_note?'block':'none';
 
+  if(r.method==='nowcast-pending'){
+    q('#drivers').innerHTML='<div class="small muted">Drivers appear once the model has scored recent data.</div>';
+    q('#forecastStrip').innerHTML='<div class="small muted" style="padding:14px">Waiting for recent sensor data.</div>';
+    return;
+  }
+
   q('#drivers').innerHTML=r.drivers.map(d=>
     `<div class="driver">
       <div class="driver-top">
@@ -144,13 +150,13 @@ async function loadOdorPlume(){
 }
 
 async function loadRiskSurface(){
-  const hasPlume=await loadOdorPlume();
+  await loadOdorPlume();
   const d=await getJson('/api/spatial/risk-surface');
   riskSurfaceLayer.clearLayers();
   windLayer.clearLayers();
 
-  // The modeled footprint replaces the older engineering surface when it is available.
-  (hasPlume ? [] : (d.cells||[])).forEach(c=>{
+  // The modeled footprint is the only risk overlay; the older engineering surface is not drawn.
+  [].forEach(c=>{
     const opacity=Math.min(.28, .045 + c.score*.30);
 
     L.circle(

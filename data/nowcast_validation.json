@@ -1,14 +1,19 @@
 {
-  "method": "month-blocked cross-validation (each month scored by a model trained on the others)",
+  "available": true,
+  "computed_at_utc": "2026-10-28T05:48:38.836367+00:00",
+  "method": "month-blocked cross-validation (each month scored by models trained on the other months)",
   "period": "Oct 2024 to Oct 2026",
+  "history_start_utc": "2024-10-28 03:00:00+00:00",
+  "history_end_utc": "2026-10-28 02:45:00+00:00",
+  "months": 25,
   "exceedance_threshold_ppb": 30.0,
   "episodes": 26,
   "flagged_within_3h": 22,
-  "chance_rate": 0.257,
-  "rate_ratio": 15.9,
-  "time_elevated_share": 0.177,
-  "elevated_share_oct_to_mar": 0.657,
-  "median_warning_hours": 2.5,
+  "chance_rate": 0.259,
+  "rate_ratio": 15.7,
+  "time_elevated_share": 0.178,
+  "elevated_share_oct_to_mar": 0.646,
+  "median_warning_hours": 2.75,
   "flagged_with_over_1h": 16,
   "warning_bins": [
     {
@@ -17,11 +22,11 @@
     },
     {
       "label": "1-2h",
-      "count": 2
+      "count": 3
     },
     {
       "label": "2-3h",
-      "count": 5
+      "count": 3
     },
     {
       "label": "3-4h",
@@ -29,11 +34,11 @@
     },
     {
       "label": "4-5h",
-      "count": 2
+      "count": 1
     },
     {
       "label": "5h+",
-      "count": 5
+      "count": 7
     },
     {
       "label": "Not flagged",
@@ -43,27 +48,27 @@
   "driver_shares": [
     {
       "name": "Plant odor signal",
-      "share": 0.66
+      "share": 0.655
     },
     {
       "name": "Weather (dispersion and stability)",
-      "share": 0.23
+      "share": 0.232
     },
     {
       "name": "Wind toward the sensor",
-      "share": 0.06
+      "share": 0.064
     },
     {
       "name": "Tide and rain",
-      "share": 0.05
+      "share": 0.049
     }
   ],
-  "worked_example": {
-    "label": "Oct 23, 2026",
+  "latest_exceedance": {
+    "onset_local": "2026-10-23 02:00",
     "peak_ppb": 70.4,
-    "onset_local": "2:00 AM",
-    "elevated_local": "1:45 AM",
-    "warning_minutes": 15
+    "flagged": true,
+    "warning_minutes": 15,
+    "elevated_local": "2026-10-23 01:45"
   },
   "episodes_list": [
     {
@@ -130,25 +135,25 @@
       "onset_local": "2025-10-10 05:45",
       "peak_ppb": 39.5,
       "flagged": true,
-      "warning_hours": 2.25
+      "warning_hours": 16.75
     },
     {
       "onset_local": "2025-10-10 07:45",
       "peak_ppb": 74.7,
       "flagged": true,
-      "warning_hours": 4.25
+      "warning_hours": 18.75
     },
     {
       "onset_local": "2025-10-13 16:30",
       "peak_ppb": 49.1,
       "flagged": true,
-      "warning_hours": 2.25
+      "warning_hours": 1.75
     },
     {
       "onset_local": "2025-10-15 01:15",
       "peak_ppb": 30.0,
       "flagged": true,
-      "warning_hours": 35.0
+      "warning_hours": 34.5
     },
     {
       "onset_local": "2025-10-17 06:15",
@@ -222,5 +227,12 @@
       "flagged": true,
       "warning_hours": 0.25
     }
-  ]
+  ],
+  "model": {
+    "version": "nowcast-logit-3h-v1",
+    "trained_at_utc": "2026-10-28T05:10:51.085832+00:00",
+    "training_start_utc": "2024-10-28 03:00:00+00:00",
+    "training_through_utc": "2026-10-28 02:45:00+00:00",
+    "training_rows": 70080
+  }
 }

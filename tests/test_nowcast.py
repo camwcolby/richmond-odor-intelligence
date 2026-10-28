@@ -44,3 +44,23 @@ def test_elevated_state_hysteresis():
     assert not st.iloc[0] and st.iloc[1]
     assert st.iloc[8]          # still on: fewer than 8 steps below
     assert not st.iloc[9]      # cleared after 8 steps below
+
+
+def test_scores_after_a_few_hours(tmp_path, monkeypatch):
+    monkeypatch.setattr(nc, "NOWCAST_PATH", tmp_path / "nowcast.joblib")
+    nc.train_nowcast(_synthetic())
+    short = _synthetic(days=14).tail(8 * 4)          # 8 hours only
+    p = nc.predict_nowcast(short)
+    assert p["available"] is True and p["warming_up"] is True
+
+
+def test_live_validation_runs(tmp_path, monkeypatch):
+    from app.ml import nowcast_eval as ev
+    monkeypatch.setattr(nc, "NOWCAST_PATH", tmp_path / "nowcast.joblib")
+    monkeypatch.setattr(ev, "VALIDATION_PATH", tmp_path / "validation.json")
+    obs = _synthetic(days=200)
+    result = ev.retrain_and_validate(obs)
+    assert result["validation_available"] is True
+    v = ev.load_validation()
+    assert v["episodes"] == sum(b["count"] for b in v["warning_bins"])
+    assert v["months"] >= 6 and v["computed_at_utc"]

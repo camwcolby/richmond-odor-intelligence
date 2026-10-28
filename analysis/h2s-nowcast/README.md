@@ -31,7 +31,11 @@ of a specific reading.
 - Plant probability = 1 - (1 - p_north)(1 - p_south), blended 70/30 with the
   last-hour max reading (persistence), then ranked as a percentile.
 
-## Validation (Oct 2024 to Oct 2026, month-blocked cross-validation)
+## Validation snapshot (Oct 2024 to Oct 2026, month-blocked cross-validation)
+
+The live site recomputes these numbers weekly from its own history
+(`app/ml/nowcast_eval.py`); the Model Performance tab always shows the latest run.
+The table below is the original offline analysis.
 
 Each month was scored by a model trained on the other months.
 

@@ -40,6 +40,8 @@ C_REG = 0.03
 QUANTILE_GRID = np.linspace(0, 1, 2001)
 LOOKBACK = pd.Timedelta("10D")         # history needed for drift floor and 72h counts
 MODEL_VERSION = "nowcast-logit-3h-v1"
+MIN_ROWS = 6 * STEPS_PER_H              # 6 hours: enough to score; long-window features use typical values
+FULL_ROWS = 3 * 24 * STEPS_PER_H        # 3 days: all features have real history
 STALE_MINUTES = 90                     # flag the state if the newest observation is older than this
 
 NOWCAST_PATH = Path(os.getenv("NOWCAST_MODEL_PATH", "data/nowcast_model.joblib"))
@@ -284,8 +286,9 @@ def predict_nowcast(obs: pd.DataFrame | None = None) -> dict:
         return {"available": False, "reason": "observation history is rebuilding"}
     ts = pd.to_datetime(obs["timestamp_utc"], utc=True)
     obs = obs.loc[ts >= ts.max() - LOOKBACK]
-    if len(obs) < 3 * 24 * STEPS_PER_H:
-        return {"available": False, "reason": "need at least 3 days of recent observations"}
+    if len(obs) < MIN_ROWS:
+        return {"available": False, "reason": "collecting the first hours of sensor data"}
+    warming_up = len(obs) < FULL_ROWS
 
     hist = score_history(obs, artifact)
     valid = hist.dropna(subset=["score"])
@@ -319,6 +322,7 @@ def predict_nowcast(obs: pd.DataFrame | None = None) -> dict:
                          for t, v in recent.items()],
         "data_age_minutes": round(age_min),
         "stale": bool(age_min > STALE_MINUTES),
+        "warming_up": bool(warming_up),
         "training_through_utc": artifact.get("training_through_utc"),
         "note": ("Elevated means conditions are in the top 10% for odor reaching the fence line "
                  "in the next 3 hours. It is a risk state, not a prediction of a specific reading."),

@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from app.ml.history import backfill_days, ingest_range, update_recent_history
+from app.ml.history import backfill_recent_first, fill_missing_history, update_recent_history
 from app.ml.pipeline import train_model
 from app.ml.store import load_metrics, load_observations
 
@@ -45,34 +45,55 @@ def _history_through_date():
 
 async def _repair_history():
     """
-    Treat the local SQLite history as a rebuildable cache.
-
-    Empty store: rebuild the configured bootstrap window.
-    Existing store: refill from shortly before the newest observation through
-    now. The overlap reconciles late/corrected source observations.
+    Treat the local SQLite history as a rebuildable cache (Render's disk is
+    wiped on restart). Rebuild newest-first so the dashboard has data within
+    minutes, then fill older history back to ML_BOOTSTRAP_DAYS in saved chunks.
     """
     first, latest, rows = _history_bounds()
-    bootstrap_days = max(30, int(os.getenv("ML_BOOTSTRAP_DAYS", "180")))
-    overlap_hours = max(6, int(os.getenv("ML_REPAIR_OVERLAP_HOURS", "30")))
-    now = datetime.now(timezone.utc)
-
+    bootstrap_days = max(30, int(os.getenv("ML_BOOTSTRAP_DAYS", "730")))
     if latest is None or rows == 0:
-        print(f"[ML] history empty; rebuilding {bootstrap_days} days in background")
-        return await backfill_days(bootstrap_days)
+        print(f"[ML] history empty; rebuilding {bootstrap_days} days newest-first")
+        return await backfill_recent_first(days=bootstrap_days)
+    print(f"[ML] filling history gaps (existing rows={rows})")
+    return await fill_missing_history(days=bootstrap_days)
 
-    latest_dt = latest.to_pydatetime()
-    start = latest_dt - timedelta(hours=overlap_hours)
-    if start >= now:
-        start = now - timedelta(hours=overlap_hours)
 
-    print(
-        "[ML] repairing history from",
-        start.isoformat(),
-        "through",
-        now.isoformat(),
-        f"(existing rows={rows})",
-    )
-    return await ingest_range(start, now)
+def _nowcast_maintenance(now_utc: datetime):
+    """Weekly: retrain the served nowcast on all history and recompute its validation."""
+    from app.ml.nowcast import load_artifact
+    from app.ml.nowcast_eval import load_validation, retrain_and_validate
+
+    every_days = max(1, int(os.getenv("NOWCAST_RETRAIN_DAYS", "7")))
+    min_days = max(30, int(os.getenv("NOWCAST_MIN_TRAIN_DAYS", "300")))
+    first, latest, rows = _history_bounds()
+    if latest is None:
+        return
+    span_days = (latest - first).total_seconds() / 86400
+    if span_days < min_days:
+        print(f"[nowcast] history spans {span_days:.0f} days; waiting for {min_days} before retraining")
+        return
+
+    def age_days(raw):
+        if not raw:
+            return float("inf")
+        try:
+            t = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            return (now_utc - t).total_seconds() / 86400
+        except Exception:
+            return float("inf")
+
+    art = load_artifact() or {}
+    val = load_validation() or {}
+    if age_days(art.get("trained_at_utc")) < every_days and age_days(val.get("computed_at_utc")) < every_days:
+        return
+    print("[nowcast] weekly retrain + validation starting")
+    try:
+        result = retrain_and_validate(load_observations())
+        print("[nowcast] weekly retrain complete:", result)
+    except Exception as exc:
+        import traceback
+        print("[nowcast] weekly retrain failed:", repr(exc))
+        traceback.print_exc()
 
 
 def _daily_retrain_due(now_utc: datetime) -> bool:
@@ -118,6 +139,7 @@ def _loop():
     try:
         result = asyncio.run(_repair_history())
         print("[ML] startup history repair:", result)
+        _nowcast_maintenance(datetime.now(timezone.utc))
         if os.getenv("ML_RUNTIME_RETRAIN_ENABLED", "false").lower() in {"true", "1", "yes", "on"}:
             _maybe_train(datetime.now(timezone.utc))
         else:
@@ -129,6 +151,7 @@ def _loop():
         try:
             result = asyncio.run(update_recent_history(30))
             print("[ML] recent history update:", result)
+            _nowcast_maintenance(datetime.now(timezone.utc))
             if os.getenv("ML_RUNTIME_RETRAIN_ENABLED", "false").lower() in {"true", "1", "yes", "on"}:
                 _maybe_train(datetime.now(timezone.utc))
         except Exception as exc:
