@@ -1,0 +1,226 @@
+{
+  "method": "month-blocked cross-validation (each month scored by a model trained on the others)",
+  "period": "Oct 2024 to Oct 2026",
+  "exceedance_threshold_ppb": 30.0,
+  "episodes": 26,
+  "flagged_within_3h": 22,
+  "chance_rate": 0.257,
+  "rate_ratio": 15.9,
+  "time_elevated_share": 0.177,
+  "elevated_share_oct_to_mar": 0.657,
+  "median_warning_hours": 2.5,
+  "flagged_with_over_1h": 16,
+  "warning_bins": [
+    {
+      "label": "Under 1h",
+      "count": 6
+    },
+    {
+      "label": "1-2h",
+      "count": 2
+    },
+    {
+      "label": "2-3h",
+      "count": 5
+    },
+    {
+      "label": "3-4h",
+      "count": 2
+    },
+    {
+      "label": "4-5h",
+      "count": 2
+    },
+    {
+      "label": "5h+",
+      "count": 5
+    },
+    {
+      "label": "Not flagged",
+      "count": 4
+    }
+  ],
+  "driver_shares": [
+    {
+      "name": "Plant odor signal",
+      "share": 0.66
+    },
+    {
+      "name": "Weather (dispersion and stability)",
+      "share": 0.23
+    },
+    {
+      "name": "Wind toward the sensor",
+      "share": 0.06
+    },
+    {
+      "name": "Tide and rain",
+      "share": 0.05
+    }
+  ],
+  "worked_example": {
+    "label": "Oct 23, 2026",
+    "peak_ppb": 70.4,
+    "onset_local": "2:00 AM",
+    "elevated_local": "1:45 AM",
+    "warning_minutes": 15
+  },
+  "episodes_list": [
+    {
+      "onset_local": "2024-12-23 10:30",
+      "peak_ppb": 46.1,
+      "flagged": false,
+      "warning_hours": null
+    },
+    {
+      "onset_local": "2025-04-24 10:00",
+      "peak_ppb": 48.4,
+      "flagged": true,
+      "warning_hours": 0.5
+    },
+    {
+      "onset_local": "2025-06-17 09:00",
+      "peak_ppb": 30.4,
+      "flagged": true,
+      "warning_hours": 1.25
+    },
+    {
+      "onset_local": "2025-06-17 10:15",
+      "peak_ppb": 33.4,
+      "flagged": true,
+      "warning_hours": 2.5
+    },
+    {
+      "onset_local": "2025-08-20 11:30",
+      "peak_ppb": 45.5,
+      "flagged": false,
+      "warning_hours": null
+    },
+    {
+      "onset_local": "2025-09-16 07:15",
+      "peak_ppb": 41.2,
+      "flagged": true,
+      "warning_hours": 0.5
+    },
+    {
+      "onset_local": "2025-10-06 19:30",
+      "peak_ppb": 32.3,
+      "flagged": true,
+      "warning_hours": 0.75
+    },
+    {
+      "onset_local": "2025-10-07 05:00",
+      "peak_ppb": 45.9,
+      "flagged": true,
+      "warning_hours": 4.75
+    },
+    {
+      "onset_local": "2025-10-07 15:45",
+      "peak_ppb": 46.5,
+      "flagged": true,
+      "warning_hours": 1.5
+    },
+    {
+      "onset_local": "2025-10-07 17:30",
+      "peak_ppb": 36.4,
+      "flagged": true,
+      "warning_hours": 3.25
+    },
+    {
+      "onset_local": "2025-10-10 05:45",
+      "peak_ppb": 39.5,
+      "flagged": true,
+      "warning_hours": 2.25
+    },
+    {
+      "onset_local": "2025-10-10 07:45",
+      "peak_ppb": 74.7,
+      "flagged": true,
+      "warning_hours": 4.25
+    },
+    {
+      "onset_local": "2025-10-13 16:30",
+      "peak_ppb": 49.1,
+      "flagged": true,
+      "warning_hours": 2.25
+    },
+    {
+      "onset_local": "2025-10-15 01:15",
+      "peak_ppb": 30.0,
+      "flagged": true,
+      "warning_hours": 35.0
+    },
+    {
+      "onset_local": "2025-10-17 06:15",
+      "peak_ppb": 53.3,
+      "flagged": true,
+      "warning_hours": 15.25
+    },
+    {
+      "onset_local": "2025-10-18 20:30",
+      "peak_ppb": 39.9,
+      "flagged": true,
+      "warning_hours": 4.0
+    },
+    {
+      "onset_local": "2025-10-19 18:15",
+      "peak_ppb": 34.2,
+      "flagged": true,
+      "warning_hours": 25.75
+    },
+    {
+      "onset_local": "2025-10-26 08:00",
+      "peak_ppb": 67.7,
+      "flagged": false,
+      "warning_hours": null
+    },
+    {
+      "onset_local": "2025-10-28 19:45",
+      "peak_ppb": 69.0,
+      "flagged": true,
+      "warning_hours": 2.5
+    },
+    {
+      "onset_local": "2025-11-04 00:30",
+      "peak_ppb": 30.1,
+      "flagged": true,
+      "warning_hours": 7.5
+    },
+    {
+      "onset_local": "2025-11-12 11:15",
+      "peak_ppb": 37.6,
+      "flagged": true,
+      "warning_hours": 0.5
+    },
+    {
+      "onset_local": "2025-11-23 14:00",
+      "peak_ppb": 33.4,
+      "flagged": true,
+      "warning_hours": 3.0
+    },
+    {
+      "onset_local": "2026-01-24 17:45",
+      "peak_ppb": 51.2,
+      "flagged": false,
+      "warning_hours": null
+    },
+    {
+      "onset_local": "2026-01-27 06:00",
+      "peak_ppb": 30.3,
+      "flagged": true,
+      "warning_hours": 12.75
+    },
+    {
+      "onset_local": "2026-03-17 20:45",
+      "peak_ppb": 37.7,
+      "flagged": true,
+      "warning_hours": 0.75
+    },
+    {
+      "onset_local": "2026-10-23 02:00",
+      "peak_ppb": 70.4,
+      "flagged": true,
+      "warning_hours": 0.25
+    }
+  ]
+}

@@ -1270,3 +1270,15 @@ main{
   line-height:1.35;
   border-radius:4px;
 }
+
+/* nowcast model performance tab */
+.nc-pad{padding:4px 18px 8px}
+.nc-text{padding:0 18px 18px;color:var(--navy);font-size:14px;line-height:1.5;margin:0}
+.nc-table-wrap{padding:0 18px 8px;overflow-x:auto}
+.nc-table{width:100%;border-collapse:collapse;font-size:13px}
+.nc-table th{text-align:left;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--line)}
+.nc-table td{padding:7px 10px;border-bottom:1px solid #EEF2F6;color:var(--navy)}
+.nc-table tr.nc-miss td{color:var(--muted)}
+.nc-table td.nc-viol{color:#C8102E;font-weight:700}
+.nc-muted .bar i{background:#9AA3AE!important}
+.nc-muted .driver-top span,.nc-muted .driver-top b{color:var(--muted)}
