@@ -121,7 +121,7 @@ async function loadOdorPlume(){
     : `${meta.wind_mps} m/s from ${meta.wind_from_deg}°`;
   const popup=
     `<b>Modeled odor footprint · ${meta.state}</b><br>`+
-    `Risk: ${Math.round(meta.risk_percentile)}th percentile<br>`+
+    `Risk: ${Math.round(meta.risk_percentile)}%<br>`+
     `${wind}; ${meta.stability_text}<br>`+
     `Reach about ${(meta.reach_m/1000).toFixed(1)} km`+
     `${meta.stale?'<br><b>Based on stale sensor data</b>':''}<br>`+

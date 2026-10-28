@@ -124,13 +124,13 @@ def _nowcast_risk_payload(n):
     pct = n["risk_percentile"]
     if n["elevated"]:
         narrative = (
-            "Odor-favorable conditions: risk is in the top 10% of the past two years "
-            "for odor reaching the fence line in the next 3 hours."
+            f"Odor risk is {pct:.0f}%, at or above the 90% elevated level: conditions favor "
+            "odor reaching the fence line in the next 3 hours."
         )
     else:
         narrative = (
-            f"Conditions are normal. Current risk sits at the {pct:.0f}th percentile; "
-            "the dashboard switches to elevated at the 90th."
+            f"Conditions are normal. Odor risk is {pct:.0f}%; "
+            "the dashboard switches to elevated at 90%."
         )
     stale_note = None
     if n.get("stale"):
@@ -142,7 +142,7 @@ def _nowcast_risk_payload(n):
         "current_level": "High" if n["elevated"] else "Low",
         "display_level": "Elevated risk" if n["elevated"] else "Normal",
         "current_probability": round(pct / 100, 3),
-        "pct_label": f"{pct:.0f}th pct",
+        "pct_label": f"{pct:.0f}% risk",
         "narrative": narrative,
         "elevated_since_utc": n["elevated_since_utc"],
         "drivers": [{"feature": d["name"], "importance": d["share"]} for d in n["drivers"]],
