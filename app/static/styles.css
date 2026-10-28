@@ -1282,3 +1282,4 @@ main{
 .nc-table td.nc-viol{color:#C8102E;font-weight:700}
 .nc-muted .bar i{background:#9AA3AE!important}
 .nc-muted .driver-top span,.nc-muted .driver-top b{color:var(--muted)}
+.plume-dot{background:linear-gradient(90deg,#E6B800 50%,#C8102E 50%);opacity:.7}

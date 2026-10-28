@@ -29,7 +29,7 @@ async function loadMLPerformance(){
     }
 
     const stateText=c.available
-      ? `${c.state} · ${Math.round(c.risk_percentile)}th percentile`
+      ? `${c.state} · ${Math.round(c.risk_percentile)}% risk`
       : `Waiting for data (${c.reason||'history rebuilding'})`;
 
     const bins=v.warning_bins||[];

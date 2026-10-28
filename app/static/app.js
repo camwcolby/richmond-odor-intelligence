@@ -103,17 +103,54 @@ async function loadRisk(){
 }
 
 const riskSurfaceLayer=L.layerGroup().addTo(mainMap);
+const plumeLayer=L.layerGroup().addTo(mainMap);
 const sensorLayer=L.layerGroup().addTo(mainMap);
 const structureLayer=L.layerGroup().addTo(mainMap);
 const ssoLayer=L.layerGroup().addTo(mainMap);
 const windLayer=L.layerGroup().addTo(mainMap);
 
+async function loadOdorPlume(){
+  plumeLayer.clearLayers();
+  let p;
+  try{ p=await getJson('/api/spatial/odor-plume'); }
+  catch(e){ console.warn('odor footprint unavailable',e); return false; }
+  const meta=p.properties||{};
+  if(!meta.available || !(p.features||[]).length) return false;
+
+  const wind=meta.wind_mps==null ? 'wind unavailable'
+    : `${meta.wind_mps} m/s from ${meta.wind_from_deg}°`;
+  const popup=
+    `<b>Modeled odor footprint · ${meta.state}</b><br>`+
+    `Risk: ${Math.round(meta.risk_percentile)}%<br>`+
+    `${wind}; ${meta.stability_text}<br>`+
+    `Reach about ${(meta.reach_m/1000).toFixed(1)} km`+
+    `${meta.stale?'<br><b>Based on stale sensor data</b>':''}<br>`+
+    `<small>Indicative dispersion shape from the plant, scaled by the risk model. Not a regulatory dispersion model.</small>`;
+
+  // outer band first so the darker inner bands sit on top
+  p.features.forEach(f=>{
+    L.geoJSON(f,{
+      style:{
+        stroke:true,
+        color:f.properties.color,
+        weight:1,
+        opacity:.35,
+        fillColor:f.properties.color,
+        fillOpacity:f.properties.fill_opacity
+      }
+    }).bindPopup(popup).addTo(plumeLayer);
+  });
+  return true;
+}
+
 async function loadRiskSurface(){
+  const hasPlume=await loadOdorPlume();
   const d=await getJson('/api/spatial/risk-surface');
   riskSurfaceLayer.clearLayers();
   windLayer.clearLayers();
 
-  (d.cells||[]).forEach(c=>{
+  // The modeled footprint replaces the older engineering surface when it is available.
+  (hasPlume ? [] : (d.cells||[])).forEach(c=>{
     const opacity=Math.min(.28, .045 + c.score*.30);
 
     L.circle(
