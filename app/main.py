@@ -13,7 +13,6 @@ from app.services.tides import get_tide_predictions
 from app.services.h2s import get_h2s, get_h2s_history
 from app.services.spatial import get_structures, get_hotspots as get_spatial_hotspots, source_receptor_features, build_risk_surface
 from app.services.privacy import public_landmark, public_map_point
-from app.ml.risk import risk_forecast
 
 from app.ml.store import init_ml_db, load_metrics, load_observations
 from app.ml.pipeline import predict_latest
@@ -151,7 +150,8 @@ def _nowcast_risk_payload(n):
         "method": n["model_version"],
         "model_status": "Trained nowcast, validated on two years of fence-line data",
         "stale": n.get("stale", False),
-        "stale_note": stale_note,
+        "stale_note": stale_note or ("Warming up: some longer-term features are still filling in after a restart."
+                                     if n.get("warming_up") else None),
     }
 
 
@@ -207,11 +207,11 @@ def ml_nowcast():
 @app.get("/api/ml/nowcast/performance")
 def ml_nowcast_performance():
     """Validation summary + served-model info + current state, for the Model Performance tab."""
-    import json
-    from pathlib import Path
+    import os
+    from datetime import timedelta
     from app.ml.nowcast import load_artifact, predict_nowcast
-    path = Path("data/nowcast_validation.json")
-    validation = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    from app.ml.nowcast_eval import load_validation
+    validation = load_validation()
     art = load_artifact()
     model = None if art is None else {
         "version": art.get("version"),
@@ -220,6 +220,11 @@ def ml_nowcast_performance():
         "training_through_utc": art.get("training_through_utc"),
         "training_rows": art.get("training_rows"),
     }
+    if model and model.get("trained_at_utc"):
+        every = max(1, int(os.getenv("NOWCAST_RETRAIN_DAYS", "7")))
+        trained = datetime.fromisoformat(str(model["trained_at_utc"]).replace("Z", "+00:00"))
+        model["next_retrain_utc"] = (trained + timedelta(days=every)).isoformat()
+        model["retrain_every_days"] = every
     try:
         current = predict_nowcast()
     except Exception as exc:
@@ -237,28 +242,22 @@ async def risk():
         n = {"available": False}
     if n.get("available"):
         return _nowcast_risk_payload(n)
-
-    h2s_data = await get_h2s()
-    tide_value = None
-    try:
-        w = await get_weather()
-        current = w["current"]
-    except Exception:
-        current = {
-            "temperature_2m": 66,
-            "relative_humidity_2m": 68,
-            "precipitation": 0,
-            "wind_speed_10m": 5,
-            "wind_direction_10m": 235
-        }
-    try:
-        t = await get_tide_predictions()
-        preds = t.get("predictions", [])
-        if preds:
-            tide_value = float(preds[0]["v"])
-    except Exception:
-        pass
-    return risk_forecast(current, h2s_data["sensors"], tide_value)
+    # No fallback to the old engineering score: say plainly that data is loading.
+    return {
+        "current_level": "Pending",
+        "display_level": "Updating",
+        "current_probability": None,
+        "pct_label": "—",
+        "narrative": "Loading recent sensor data; the risk model scores as soon as a few hours are in.",
+        "stale_note": None,
+        "pending_reason": n.get("reason", "risk model unavailable"),
+        "elevated_since_utc": None,
+        "drivers": [],
+        "hourly": [],
+        "recent_hours": [],
+        "method": "nowcast-pending",
+        "stale": False,
+    }
 
 
 @app.get("/api/sonoma/config")

@@ -19,11 +19,19 @@ async function loadMLPerformance(){
     const d=await getJson('/api/ml/nowcast/performance');
     const v=d.validation, m=d.model, c=d.current||{};
 
-    if(!v || !m){
+    if(!m){
       root.innerHTML=`
         <div class="ml-empty">
           <h3>Risk model not installed</h3>
           <p>Run <code>python -m app.ml.cli train-nowcast</code>.</p>
+        </div>`;
+      return;
+    }
+    if(!v || !v.available){
+      root.innerHTML=`
+        <div class="ml-empty">
+          <h3>Validation is being computed</h3>
+          <p>${(v&&v.reason)||'It runs after the sensor history rebuilds and at every weekly retrain.'}</p>
         </div>`;
       return;
     }
@@ -37,7 +45,21 @@ async function loadMLPerformance(){
     const binsHtml=bins.map(b=>bar(b.label,b.count,maxBin,`${b.count}`,b.label==='Not flagged')).join('');
     const drivers=v.driver_shares||[];
     const driversHtml=drivers.map(x=>bar(x.name,x.share,1,pct(x.share))).join('');
-    const ex=v.worked_example||{};
+    const ex=v.latest_exceedance;
+    const fmtLocal=x=>x?new Date(x.replace(' ','T')).toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):'—';
+    const fmtTime=x=>x?new Date(x.replace(' ','T')).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):'—';
+    const exHtml=!ex ? '' : `
+      <article class="panel ml-panel">
+        <div class="card-title-row"><div>
+          <div class="small muted">MOST RECENT EXCEEDANCE</div>
+          <div class="card-title">${fmtLocal(ex.onset_local)}: ${Math.round(ex.peak_ppb)} ppb</div>
+        </div></div>
+        <p class="nc-text">${ex.flagged
+          ? `The dashboard turned elevated at ${fmtTime(ex.elevated_local)}, ${ex.warning_minutes>=60?(ex.warning_minutes/60).toFixed(1)+' hours':ex.warning_minutes+' minutes'} before the exceedance started.`
+          : `No advance flag: the dashboard did not show elevated risk in the 3 hours before.`}
+          Scored by a model that did not train on that month.</p>
+      </article>`;
+    const months=v.months?`${v.months} months`:'the available history';
 
     const rows=(v.episodes_list||[]).slice().reverse().map(e=>{
       const dt=new Date(e.onset_local.replace(' ','T'));
@@ -54,8 +76,8 @@ async function loadMLPerformance(){
 
     root.innerHTML=`
       <div class="ml-reliability good">
-        <b>Validated on two years of fence-line data (${v.period}).</b>
-        <span>Each month was scored by a model trained on the other months, so every result below is out-of-sample.</span>
+        <b>Validated on ${months} of fence-line data (${v.period}), recomputed ${fmtDate(v.computed_at_utc)}.</b>
+        <span>Each month was scored by a model trained on the other months, so every result below is out-of-sample. The model retrains and this page recomputes every ${m.retrain_every_days||7} days.</span>
       </div>
 
       <div class="ml-health-grid">
@@ -66,12 +88,12 @@ async function loadMLPerformance(){
         </div>
         <div class="ml-health-card">
           <span>More likely after a flag</span>
-          <strong>${Math.round(v.rate_ratio)}×</strong>
+          <strong>${v.rate_ratio==null?'—':Math.round(v.rate_ratio)+'×'}</strong>
           <small>a random moment passes the same test ${pct(v.chance_rate)} of the time</small>
         </div>
         <div class="ml-health-card">
           <span>Median warning</span>
-          <strong>${v.median_warning_hours} h</strong>
+          <strong>${v.median_warning_hours==null?'—':v.median_warning_hours+' h'}</strong>
           <small>${v.flagged_with_over_1h} of ${v.flagged_within_3h} flagged had more than 1 h</small>
         </div>
         <div class="ml-health-card">
@@ -85,7 +107,7 @@ async function loadMLPerformance(){
         <div><span>Current state</span><b>${stateText}</b></div>
         <div><span>Current data timestamp</span><b>${c.available?fmtDate(c.timestamp_utc):'—'}${c.stale?' (stale)':''}</b></div>
         <div><span>Model trained</span><b>${fmtDate(m.trained_at_utc)}</b></div>
-        <div><span>Training window</span><b>${fmtDate(m.training_start_utc)} to ${fmtDate(m.training_through_utc)}</b></div>
+        <div><span>Next retrain</span><b>${fmtDate(m.next_retrain_utc)}</b></div>
       </div>
 
       <div class="ml-two-col">
@@ -104,17 +126,11 @@ async function loadMLPerformance(){
             <div class="card-title">What raised the risk before an exceedance</div>
           </div></div>
           <div class="drivers nc-pad">${driversHtml}</div>
-          <p class="ml-note">Average across all ${v.episodes} exceedances. The plant's own odor usually shows up faintly at the sensors first; weather decides whether it builds.</p>
+          <p class="ml-note">Average share of what raised the risk 15 minutes before each of the ${v.episodes} exceedances.</p>
         </article>
       </div>
 
-      <article class="panel ml-panel">
-        <div class="card-title-row"><div>
-          <div class="small muted">WORKED EXAMPLE</div>
-          <div class="card-title">${ex.label}: ${Math.round(ex.peak_ppb)} ppb at ${ex.onset_local}</div>
-        </div></div>
-        <p class="nc-text">The dashboard turned elevated at ${ex.elevated_local}, ${ex.warning_minutes} minutes before the peak. It was a fast release in nearly dead air, the hardest pattern to see coming, and it was not part of the data used to score that month.</p>
-      </article>
+      ${exHtml}
 
       <article class="panel ml-panel">
         <div class="card-title-row"><div>

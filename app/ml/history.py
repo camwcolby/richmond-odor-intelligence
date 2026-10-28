@@ -106,3 +106,61 @@ async def backfill_days(days=90):
 async def update_recent_history(hours=12):
     end=datetime.now(timezone.utc); start=end-timedelta(hours=max(2,int(hours)))
     return await ingest_range(start,end)
+
+
+async def backfill_recent_first(days=730, first_days=10, chunk_days=14, on_progress=None):
+    """
+    Rebuild history newest-first so the dashboard works within minutes:
+    the last `first_days` days are ingested and saved before anything older,
+    then older history is filled in `chunk_days` windows, each saved as it
+    lands, so a restart mid-backfill keeps what was already fetched.
+    """
+    end = datetime.now(timezone.utc)
+    floor = end - timedelta(days=max(first_days, int(days)))
+    totals = {"rows": 0, "chunks": 0, "failed_chunks": 0}
+    windows = [(end - timedelta(days=first_days), end)]
+    cur = windows[0][0]
+    while cur > floor:
+        nxt = max(floor, cur - timedelta(days=chunk_days))
+        windows.append((nxt, cur))
+        cur = nxt
+    for a, b in windows:
+        try:
+            r = await ingest_range(a, b)
+            totals["rows"] += int(r.get("rows", 0) or 0)
+            totals["chunks"] += 1
+        except Exception as exc:
+            totals["failed_chunks"] += 1
+            print(f"[ML] backfill chunk {a.date()}..{b.date()} failed: {exc!r}")
+        if on_progress:
+            on_progress(a, b, totals)
+    return totals
+
+
+async def fill_missing_history(days=730, chunk_days=14):
+    """Fill gaps at the newest end (since the last observation) and the oldest end
+    (back to `days`), recent-first. Used when the store already has some rows."""
+    from app.ml.store import load_observations
+    df = load_observations()
+    if df.empty:
+        return await backfill_recent_first(days=days, chunk_days=chunk_days)
+    now = datetime.now(timezone.utc)
+    newest = df["timestamp_utc"].max().to_pydatetime()
+    oldest = df["timestamp_utc"].min().to_pydatetime()
+    totals = {"rows": 0, "chunks": 0, "failed_chunks": 0}
+    spans = [(newest - timedelta(hours=30), now)]
+    floor = now - timedelta(days=days)
+    cur = oldest
+    while cur > floor + timedelta(days=1):
+        nxt = max(floor, cur - timedelta(days=chunk_days))
+        spans.append((nxt, cur))
+        cur = nxt
+    for a, b in spans:
+        try:
+            r = await ingest_range(a, b)
+            totals["rows"] += int(r.get("rows", 0) or 0)
+            totals["chunks"] += 1
+        except Exception as exc:
+            totals["failed_chunks"] += 1
+            print(f"[ML] history fill {a.date()}..{b.date()} failed: {exc!r}")
+    return totals
