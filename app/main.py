@@ -1,5 +1,5 @@
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -245,6 +245,41 @@ async def ml_backtest(start_date: str = "2026-10-19", end_date: str = "2026-10-2
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Historical data recovery or replay failed: {type(exc).__name__}: {exc}")
 
+
+
+@app.get("/api/ml/observations/export")
+def ml_observations_export(
+    start_date: str = "2026-10-17",
+    end_date: str = "2026-10-27",
+    x_export_token: str | None = Header(default=None),
+):
+    """Token-protected, read-only transfer of observations, never credentials."""
+    import os
+    import secrets
+    from fastapi.responses import JSONResponse
+    secret = os.environ.get("ML_EXPORT_TOKEN", "")
+    if not secret:
+        raise HTTPException(status_code=503, detail="ML_EXPORT_TOKEN not configured")
+    if not x_export_token or not secrets.compare_digest(x_export_token, secret):
+        raise HTTPException(status_code=401, detail="Invalid export token")
+    try:
+        start = datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        end = datetime.strptime(end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Dates must use YYYY-MM-DD")
+    if end <= start or (end - start).days > 35:
+        raise HTTPException(status_code=400, detail="Date window must be 1-35 days")
+    df = load_observations()
+    if not df.empty:
+        df = df.loc[(df.timestamp_utc >= start) & (df.timestamp_utc < end)].copy()
+        df["timestamp_utc"] = df["timestamp_utc"].dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        df = df.astype(object).where(df.notna(), None)
+    records = df.to_dict(orient="records")
+    return JSONResponse(
+        content={"rows": records, "row_count": len(records),
+                 "start_date": start_date, "end_date": end_date},
+        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+    )
 
 @app.get("/api/live-cache/status")
 def live_cache_status():
