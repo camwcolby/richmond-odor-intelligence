@@ -840,9 +840,13 @@ def train_model(persist=True):
             tr[PEAK_FEATURES], tr["future_60m_max_h2s"],
             model__sample_weight=peak_weights,
         )
-        challenger_predictions.append(np.maximum(
-            0.0, challenger.predict(te[PEAK_FEATURES])
-        ))
+        challenger_predictions.append(pd.DataFrame({
+            "timestamp_utc": te["timestamp_utc"].values,
+            "actual": te["future_60m_max_h2s"].values,
+            "current": te["system_h2s_max"].values,
+            "predicted": np.maximum(0.0, challenger.predict(te[PEAK_FEATURES])),
+            "fold": fold_no,
+        }))
 
         peak_predictions.append(
             pd.DataFrame({
@@ -905,9 +909,59 @@ def train_model(persist=True):
     y = pv["actual"].astype(float)
     pp = pv["predicted"].astype(float).values
 
-    challenger_pp = np.concatenate(challenger_predictions)
+    cv = pd.concat(challenger_predictions, ignore_index=True)
+    challenger_pp = cv["predicted"].to_numpy()
+    # Score only *advance* warnings, never a threshold forecast issued
+    # after the observed monitor has already crossed the threshold.
+    def _pre_onset_detection(frame, threshold):
+        frame = frame.sort_values("timestamp_utc").reset_index(drop=True)
+        times = pd.to_datetime(frame["timestamp_utc"], utc=True)
+        current = frame["current"].to_numpy()
+        predicted = frame["predicted"].to_numpy()
+        onset = (current >= threshold) & (np.r_[False, current[:-1] < threshold])
+        # Require contiguous 15-minute samples for onset detection.
+        indices = np.flatnonzero(onset)
+        detected = 0
+        evaluable = 0
+        for idx in indices:
+            ts = times.iloc[idx]
+            prior = (
+                (times >= ts - pd.Timedelta(minutes=60))
+                & (times < ts)
+                & (frame["fold"] == frame["fold"].iloc[idx])
+                & (frame["current"] < threshold)
+            )
+            if not prior.any():
+                continue
+            evaluable += 1
+            if (predicted[prior.to_numpy()] >= threshold).any():
+                detected += 1
+        return {
+            "observed_onsets": int(len(indices)),
+            "evaluable_onsets": int(evaluable),
+            "warned_onsets": int(detected),
+            "event_recall": detected / evaluable if evaluable else None,
+        }
+    challenger_event_metrics = {
+        str(int(t)): _pre_onset_detection(cv, t)
+        for t in (30.0, 60.0)
+    }
+    baseline_event_metrics = {
+        str(int(t)): _pre_onset_detection(
+            pd.DataFrame({
+                "timestamp_utc": pv["timestamp_utc"],
+                "current": pv["timestamp_utc"].map(
+                    labeled.set_index("timestamp_utc")["system_h2s_max"]
+                ),
+                "predicted": pv["predicted"],
+                "fold": pv["fold"],
+            }), t
+        )
+        for t in (30.0, 60.0)
+    }
     challenger_metrics = {
         "model_type": "WeightedHistGradientBoostingRegressor",
+        "pre_onset_detection": challenger_event_metrics,
         "production_promoted": False,
         "mae_ppb": float(mean_absolute_error(y, challenger_pp)),
         "mae_ge_30_ppb": _subset_mae(y, challenger_pp, 30),
@@ -942,6 +996,7 @@ def train_model(persist=True):
     )
     peak_metrics = {
         "persistence_mae_ppb": persistence_mae,
+        "pre_onset_detection": baseline_event_metrics,
         "mae_improvement_over_persistence_ppb": (
             float(persistence_mae - mean_absolute_error(y, pp))
             if persistence_mae is not None else None
