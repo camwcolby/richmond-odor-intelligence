@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 import math
 
 import joblib
@@ -84,6 +85,18 @@ PEAK_FEATURES = [
     "hour_cos",
     "month_sin",
     "month_cos",
+]
+
+# Compact research-only additions; existing deployed model feature schema stays intact.
+# Slopes are ppb/min on the current 15-minute observation grid.
+CHALLENGER_FEATURES = PEAK_FEATURES + [
+    "h2s_rate_15m_ppb_min",
+    "h2s_rate_30m_ppb_min",
+    "h2s_rate_acceleration_ppb_min2",
+    "h2s_volatility_1h",
+    "north_south_h2s_gap",
+    "local_hour_sin",
+    "local_hour_cos",
 ]
 
 ENV_FEATURES = [
@@ -247,6 +260,31 @@ def _base_features(df):
         x["system_h2s_max"]
         - x["system_h2s_max"].shift(2)
     )
+
+    # Differences are normalized by elapsed time, not assumed row spacing.
+    # A missing or delayed sensor reading must not fabricate a rapid rise.
+    elapsed15 = (pd.to_datetime(x["timestamp_utc"], utc=True)
+                 - pd.to_datetime(x["timestamp_utc"], utc=True).shift(1)).dt.total_seconds() / 60
+    elapsed30 = (pd.to_datetime(x["timestamp_utc"], utc=True)
+                 - pd.to_datetime(x["timestamp_utc"], utc=True).shift(2)).dt.total_seconds() / 60
+    x["h2s_rate_15m_ppb_min"] = (
+        (x["system_h2s_max"] - x["system_h2s_max"].shift(1)) / elapsed15
+    ).where(elapsed15.between(10, 20))
+    x["h2s_rate_30m_ppb_min"] = (
+        (x["system_h2s_max"] - x["system_h2s_max"].shift(2)) / elapsed30
+    ).where(elapsed30.between(25, 35))
+    x["h2s_rate_acceleration_ppb_min2"] = (
+        (x["h2s_rate_15m_ppb_min"] - x["h2s_rate_15m_ppb_min"].shift(1))
+        / elapsed15
+    ).where(elapsed15.between(10, 20))
+    x["h2s_volatility_1h"] = x["system_h2s_max"].rolling(4, min_periods=3).std()
+    x["north_south_h2s_gap"] = x["north_h2s_ppb"] - x["south_h2s_ppb"]
+    local_ts = pd.to_datetime(x["timestamp_utc"], utc=True).dt.tz_convert(
+        ZoneInfo("America/Los_Angeles")
+    )
+    local_hour = local_ts.dt.hour + local_ts.dt.minute / 60
+    x["local_hour_sin"] = np.sin(2 * np.pi * local_hour / 24)
+    x["local_hour_cos"] = np.cos(2 * np.pi * local_hour / 24)
 
     wd = pd.to_numeric(
         x["wind_direction_deg"],
@@ -837,14 +875,14 @@ def train_model(persist=True):
             np.where(tr["future_60m_max_h2s"].to_numpy() >= 30, 5.0, 1.0),
         )
         challenger.fit(
-            tr[PEAK_FEATURES], tr["future_60m_max_h2s"],
+            tr[CHALLENGER_FEATURES], tr["future_60m_max_h2s"],
             model__sample_weight=peak_weights,
         )
         challenger_predictions.append(pd.DataFrame({
             "timestamp_utc": te["timestamp_utc"].values,
             "actual": te["future_60m_max_h2s"].values,
             "current": te["system_h2s_max"].values,
-            "predicted": np.maximum(0.0, challenger.predict(te[PEAK_FEATURES])),
+            "predicted": np.maximum(0.0, challenger.predict(te[CHALLENGER_FEATURES])),
             "fold": fold_no,
         }))
 
