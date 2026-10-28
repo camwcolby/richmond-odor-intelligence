@@ -119,8 +119,55 @@ def change_status(complaint_id: str, body: StatusIn):
 def hotspots():
     return get_spatial_hotspots()
 
+def _nowcast_risk_payload(n):
+    """Shape the nowcast for the existing risk card: one state, Elevated or Normal."""
+    pct = n["risk_percentile"]
+    if n["elevated"]:
+        narrative = (
+            "Odor-favorable conditions: risk is in the top 10% of the past two years "
+            "for odor reaching the fence line in the next 3 hours."
+        )
+    else:
+        narrative = (
+            f"Conditions are normal. Current risk sits at the {pct:.0f}th percentile; "
+            "the dashboard switches to elevated at the 90th."
+        )
+    if n.get("stale"):
+        hours = n["data_age_minutes"] / 60
+        narrative += f" Note: the newest sensor data is {hours:.1f} hours old."
+    return {
+        "current_level": "High" if n["elevated"] else "Low",
+        "display_level": "Elevated risk" if n["elevated"] else "Normal",
+        "current_probability": round(pct / 100, 3),
+        "pct_label": f"{pct:.0f}th pct",
+        "narrative": narrative,
+        "elevated_since_utc": n["elevated_since_utc"],
+        "drivers": [{"feature": d["name"], "importance": d["share"]} for d in n["drivers"]],
+        "hourly": [],
+        "recent_hours": n["recent_hours"],
+        "method": n["model_version"],
+        "model_status": "Trained nowcast, validated on two years of fence-line data",
+        "stale": n.get("stale", False),
+    }
+
+
+@app.get("/api/ml/nowcast")
+def ml_nowcast():
+    from app.ml.nowcast import predict_nowcast
+    return predict_nowcast()
+
+
 @app.get("/api/risk")
 async def risk():
+    from app.ml.nowcast import predict_nowcast
+    try:
+        n = predict_nowcast()
+    except Exception as exc:
+        print("[nowcast] unavailable:", repr(exc))
+        n = {"available": False}
+    if n.get("available"):
+        return _nowcast_risk_payload(n)
+
     h2s_data = await get_h2s()
     tide_value = None
     try:
