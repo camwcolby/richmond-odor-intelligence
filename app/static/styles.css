@@ -1257,3 +1257,16 @@ main{
 .risk-narrative{
   display:none!important;
 }
+
+/* nowcast: stale sensor data warning on the risk card */
+.risk-stale{
+  margin-top:10px;
+  padding:8px 12px;
+  border-left:4px solid var(--amber);
+  background:#FFF6E5;
+  color:#6B4A00;
+  font-size:13px;
+  font-weight:600;
+  line-height:1.35;
+  border-radius:4px;
+}

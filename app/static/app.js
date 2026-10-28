@@ -54,6 +54,17 @@ async function loadRisk(){
   }
   q('#riskNarrative').textContent=narrative;
 
+  // Stale-data warning stays visible even though the narrative line is hidden by CSS.
+  let staleEl=q('#riskStale');
+  if(!staleEl){
+    staleEl=document.createElement('div');
+    staleEl.id='riskStale';
+    staleEl.className='risk-stale';
+    q('#riskPct').insertAdjacentElement('afterend',staleEl);
+  }
+  staleEl.textContent=r.stale_note||'';
+  staleEl.style.display=r.stale_note?'block':'none';
+
   q('#drivers').innerHTML=r.drivers.map(d=>
     `<div class="driver">
       <div class="driver-top">

@@ -132,9 +132,12 @@ def _nowcast_risk_payload(n):
             f"Conditions are normal. Current risk sits at the {pct:.0f}th percentile; "
             "the dashboard switches to elevated at the 90th."
         )
+    stale_note = None
     if n.get("stale"):
         hours = n["data_age_minutes"] / 60
-        narrative += f" Note: the newest sensor data is {hours:.1f} hours old."
+        stale_note = (f"Sensor data is {hours:.1f} hours old; this state reflects the last "
+                      "readings received, not current conditions.")
+        narrative += " " + stale_note
     return {
         "current_level": "High" if n["elevated"] else "Low",
         "display_level": "Elevated risk" if n["elevated"] else "Normal",
@@ -148,6 +151,7 @@ def _nowcast_risk_payload(n):
         "method": n["model_version"],
         "model_status": "Trained nowcast, validated on two years of fence-line data",
         "stale": n.get("stale", False),
+        "stale_note": stale_note,
     }
 
 
