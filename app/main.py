@@ -161,6 +161,29 @@ def ml_nowcast():
     return predict_nowcast()
 
 
+@app.get("/api/ml/nowcast/performance")
+def ml_nowcast_performance():
+    """Validation summary + served-model info + current state, for the Model Performance tab."""
+    import json
+    from pathlib import Path
+    from app.ml.nowcast import load_artifact, predict_nowcast
+    path = Path("data/nowcast_validation.json")
+    validation = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    art = load_artifact()
+    model = None if art is None else {
+        "version": art.get("version"),
+        "trained_at_utc": art.get("trained_at_utc"),
+        "training_start_utc": art.get("training_start_utc"),
+        "training_through_utc": art.get("training_through_utc"),
+        "training_rows": art.get("training_rows"),
+    }
+    try:
+        current = predict_nowcast()
+    except Exception as exc:
+        current = {"available": False, "reason": f"{type(exc).__name__}"}
+    return {"validation": validation, "model": model, "current": current}
+
+
 @app.get("/api/risk")
 async def risk():
     from app.ml.nowcast import predict_nowcast
